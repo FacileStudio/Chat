@@ -1,0 +1,17 @@
+[settings]
+lockfile = true
+
+[tools]
+go = "1.27"
+
+[tasks.build]
+description = "Build the binary into ./bin"
+run = "go build -o bin/chat ."
+
+[tasks.check]
+description = "Run the full quality gate: gofmt, vet, test, filet"
+run = "sh ./scripts/check.sh"
+
+[tasks.format]
+description = "Format the Go sources in place"
+run = "sh ./scripts/check.sh --format"

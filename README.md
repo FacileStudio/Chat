@@ -1,44 +1,83 @@
-# XMPP and Coturn stack for Dokploy
+# Facile Chat
 
-Instant messaging and audio/video calling server stack deployed via Dokploy.
+Terminal chat application and self-hosted XMPP infrastructure for Facile Studio.
 
-The stack runs ejabberd and Coturn with zero hardcoded credentials or IP addresses. It aligns with modern XMPP compliance standards: in-band registration with anti-abuse throttling, 1:1 chat with OMEMO encryption, private members-only rooms (MUC), HTTP file sharing, mobile push notifications, and WebRTC STUN/TURN media relay.
+## Architecture
 
-## Repository structure
+This repository is organized as a monorepo containing the CLI chat app, web registration portal, and server infrastructure:
 
 ```text
 .
-├── .env.example
-├── docker-compose.yml
-├── ejabberd.yml
-├── README.md
-└── web/
-    ├── Dockerfile
-    ├── package.json
-    └── src/
+├── apps/
+│   └── web/            SvelteKit web registration and client directory
+├── cmd/                CLI commands and versioning
+├── internal/
+│   ├── config/         Local configuration storage (~/.config/chat/config.yml)
+│   ├── event/          Internal message and presence events
+│   ├── ui/             Charmbracelet Bubble Tea TUI
+│   └── xmpp/           Mellium XMPP protocol engine
+├── docker-compose.yml  Ejabberd, Coturn, and web portal service definitions
+├── ejabberd.yml        XMPP server configuration
+├── filet.yml           Code quality standard enforcement
+├── install.sh          Suite installer bootstrap shim
+├── main.go             Terminal client entry point
+└── mise.toml           Toolchain and task definitions
 ```
 
-## Prerequisites
+## Chat CLI
 
-A virtual private server with Dokploy installed.
+The `chat` CLI provides an interactive terminal chat interface built with Bubble Tea and Lip Gloss.
 
-A registered domain or subdomain pointing to the server IP (must be DNS-only, unproxied / grey cloud in Cloudflare).
+### Installation
 
-Required open ports on the host:
+Install via the Facile Studio installer:
 
-`80/tcp` and `443/tcp`: Handled by Dokploy and Traefik for web admin, WebSockets, HTTP upload, and ACME certificates.
+```bash
+facile install chat
+```
 
-`5222/tcp`: XMPP client-to-server traffic with STARTTLS.
+Or run the repository installer script:
 
-`5269/tcp` (Optional): Server-to-server federation.
+```bash
+curl -fsSL https://raw.githubusercontent.com/FacileStudio/Chat/main/install.sh | bash
+```
 
-`3478/tcp` and `3478/udp`: STUN/TURN discovery service.
+### Usage
 
-`49152-49200/udp`: RTP media relay port range for audio/video calls.
+Run the terminal client:
 
-## Configuration
+```bash
+chat
+```
 
-Define these variables in the Dokploy environment tab:
+Pass credentials directly via flags or environment variables:
+
+```bash
+chat -j user@chat.example.com -p mypassword
+```
+
+Environment variables:
+
+- `CHAT_JID`: Account JID
+- `CHAT_PASSWORD`: Account password
+- `CHAT_SERVER`: Optional server hostname override
+
+### In-app commands
+
+- `/msg <jid> <message>`: Send a direct message to a user
+- `/add <jid> [name]`: Add a contact to your roster
+- `/status <chat|away|dnd|offline> [msg]`: Update presence
+- `/clear`: Clear active conversation history
+- `/quit`: Exit the client
+- `Tab`: Switch focus between contacts list and chat input
+
+## Server deployment
+
+The server stack deploys via Dokploy using Docker Compose.
+
+### Configuration
+
+Define these environment variables:
 
 ```env
 DOMAIN=chat.example.com
@@ -46,53 +85,16 @@ TURN_SECRET=generate_with_openssl_rand_hex_32
 ADMIN_PASSWORD=strong_admin_password_here
 ```
 
-Generate a secure TURN secret:
+Generate the TURN secret with OpenSSL:
 
 ```bash
 openssl rand -hex 32
 ```
 
-## Deployment via Dokploy
+### Quality gate
 
-1. In Dokploy, create a new Compose service.
-2. Link this Git repository and select the target branch.
-3. Add `DOMAIN`, `TURN_SECRET`, and `ADMIN_PASSWORD` in the environment tab.
-4. Deploy the service. Ejabberd automatically provisions the admin account `admin@<DOMAIN>` on initial boot.
+Run the quality check suite with filet and Go test runners:
 
-## User registration and privacy
-
-### Web registration
-
-Anyone can visit `https://<DOMAIN>/` in any web browser to view the Facile Chat landing page, create a personal handle, and view recommended clients.
-
-### In-band registration
-
-Clients that implement in-band registration (Conversations, Gajim, Siskin) can register directly inside the app. Clients like Dino that expect external accounts direct users to `https://<DOMAIN>/` to sign up.
-
-To prevent bot swarms:
-- `registration_timeout` limits account creation to one per 5 minutes per IP address.
-- `mod_fail2ban` blocks IP addresses that trigger repeated authentication failures.
-- `registration_watchers` sends an instant message to `admin@<DOMAIN>` whenever a new account registers.
-
-### Private team rooms
-
-Rooms created under `conference.<DOMAIN>` use private, members-only defaults:
-- `members_only: true`: Non-members cannot enter or view message history. Ejabberd rejects unauthorized join attempts with error 407 (registration-required).
-- `public: false`: Rooms are unlisted in service discovery. Outsiders cannot discover room names.
-- `public_list: false`: Room member lists are hidden from non-members.
-- `mam: true`: Message history is archived for authorized room members.
-- `persistent: true`: Rooms remain active when occupants disconnect.
-
-To add a team member to a room, room moderators invite them directly from their client or add their JID to the room member list.
-
-For maximum privacy, enable OMEMO encryption inside the room settings in your client. All room messages are then end-to-end encrypted with Signal Double Ratchet keys between authorized members.
-
-## Recommended clients
-
-Android: Conversations or Cheogram
-
-iOS: Siskin IM or Monal
-
-Desktop (Linux, macOS, Windows): Dino or Gajim
-
-Web: Converse.js or Movim
+```bash
+sh scripts/check.sh
+```
