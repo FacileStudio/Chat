@@ -19,9 +19,10 @@ const (
 
 // ViewState encapsulates window dimensions and focused pane.
 type ViewState struct {
-	width      int
-	height     int
-	activePane Pane
+	width          int
+	height         int
+	activePane     Pane
+	historyFetched map[string]bool
 }
 
 // LoginState encapsulates state for the in-app login modal.

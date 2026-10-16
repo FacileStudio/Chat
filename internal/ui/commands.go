@@ -24,11 +24,9 @@ func handleCommand(m *Model, input string) tea.Cmd {
 	case "/status":
 		return cmdStatus(m, parts)
 	case "/clear":
-		if m.activeJID != "" {
-			m.messages[m.activeJID] = nil
-			refreshChatContent(m)
-		}
-		return nil
+		return cmdClear(m)
+	case "/history":
+		return cmdHistory(m)
 	case "/quit", "/q":
 		return tea.Quit
 	default:
@@ -37,11 +35,28 @@ func handleCommand(m *Model, input string) tea.Cmd {
 	}
 }
 
+func cmdClear(m *Model) tea.Cmd {
+	if m.activeJID != "" {
+		m.messages[m.activeJID] = nil
+		refreshChatContent(m)
+	}
+	return nil
+}
+
+func cmdHistory(m *Model) tea.Cmd {
+	if m.activeJID != "" && m.client != nil {
+		appendSystemMessage(m, "Fetching past messages...")
+		return fetchHistoryCmd(m.client, m.activeJID)
+	}
+	return nil
+}
+
 func cmdHelp(m *Model) tea.Cmd {
 	helpText := "Available commands:\n" +
 		"  /msg <jid> <message> - Send direct message\n" +
 		"  /add <jid> [name]    - Add contact to roster\n" +
 		"  /status <show> [msg] - Set presence (chat, away, dnd, offline)\n" +
+		"  /history             - Fetch past conversation messages\n" +
 		"  /clear               - Clear current chat history\n" +
 		"  /quit                - Exit application\n" +
 		"Shortcuts:\n" +

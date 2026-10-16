@@ -44,7 +44,7 @@ func New(cfg *config.Config, client *xmpp.Client, events chan any) Model {
 		viewport: vp,
 		input:    ti,
 		login:    LoginState{active: loginActive, focus: 0, pass: pass},
-		view:     ViewState{activePane: PaneChat},
+		view:     ViewState{activePane: PaneChat, historyFetched: make(map[string]bool)},
 		status:   ConnStatus{state: event.StateDisconnected, text: "Ready"},
 	}
 }

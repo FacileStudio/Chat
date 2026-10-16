@@ -9,15 +9,19 @@ import (
 )
 
 func handleXMPPEvent(m *Model, ev any) tea.Cmd {
+	var cmd tea.Cmd
 	switch e := ev.(type) {
 	case event.StatusEvent:
 		handleStatusEvent(m, e)
 	case event.MessageEvent:
 		handleMessageEvent(m, e)
 	case event.RosterEvent:
-		handleRosterEvent(m, e)
+		cmd = handleRosterEvent(m, e)
 	case event.PresenceEvent:
 		handlePresenceEvent(m, e)
+	}
+	if cmd != nil {
+		return tea.Batch(listenEvents(m.events), cmd)
 	}
 	return listenEvents(m.events)
 }
@@ -35,7 +39,7 @@ func handleMessageEvent(m *Model, ev event.MessageEvent) {
 	if ev.Sent {
 		target = ev.To
 	}
-	m.messages[target] = append(m.messages[target], ev)
+	m.messages[target] = insertMessage(m.messages[target], ev)
 	if m.activeJID == "" {
 		m.activeJID = target
 	}
@@ -44,12 +48,13 @@ func handleMessageEvent(m *Model, ev event.MessageEvent) {
 	}
 }
 
-func handleRosterEvent(m *Model, ev event.RosterEvent) {
+func handleRosterEvent(m *Model, ev event.RosterEvent) tea.Cmd {
 	m.roster = ev.Items
 	if m.activeJID == "" && len(m.roster) > 0 {
 		m.activeJID = m.roster[0].JID
 		refreshChatContent(m)
 	}
+	return checkFetchHistory(m, m.activeJID)
 }
 
 func handlePresenceEvent(m *Model, ev event.PresenceEvent) {
@@ -75,7 +80,7 @@ func refreshChatContent(m *Model) {
 	}
 	var sb strings.Builder
 	for _, msg := range msgs {
-		t := msgTime.Render(msg.Time.Format("15:04"))
+		t := msgTime.Render(formatMsgTime(msg.Time))
 		if msg.Sent {
 			sb.WriteString(fmt.Sprintf("%s %s: %s\n", t, msgSelf.Render("You"), msg.Body))
 		} else {

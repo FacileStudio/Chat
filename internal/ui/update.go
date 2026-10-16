@@ -21,7 +21,9 @@ func handleActiveUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 	case tea.MouseMsg:
-		handleMouseClick(&m, msg)
+		if cmd := handleMouseClick(&m, msg); cmd != nil {
+			return m, cmd
+		}
 	case tea.WindowSizeMsg:
 		handleResize(&m, msg)
 	case xmppEventMsg:
@@ -62,10 +64,10 @@ func handleKeyPress(m *Model, msg tea.KeyMsg) tea.Cmd {
 		}
 		return handleEnter(m)
 	case tea.KeyUp, tea.KeyDown:
-		handleNavigation(m, msg.String())
+		return handleNavigation(m, msg.String())
 	}
 	if m.view.activePane == PaneRoster && (msg.String() == "j" || msg.String() == "k") {
-		handleNavigation(m, msg.String())
+		return handleNavigation(m, msg.String())
 	}
 	return nil
 }
@@ -102,9 +104,9 @@ func handleEnter(m *Model) tea.Cmd {
 	return nil
 }
 
-func handleMouseClick(m *Model, msg tea.MouseMsg) {
+func handleMouseClick(m *Model, msg tea.MouseMsg) tea.Cmd {
 	if msg.Action != tea.MouseActionPress || msg.Button != tea.MouseButtonLeft {
-		return
+		return nil
 	}
 	if msg.X <= 26 {
 		row := msg.Y - 2
@@ -114,26 +116,28 @@ func handleMouseClick(m *Model, msg tea.MouseMsg) {
 			m.view.activePane = PaneChat
 			m.input.Focus()
 			refreshChatContent(m)
+			return checkFetchHistory(m, m.activeJID)
 		}
-		return
+		return nil
 	}
 	m.view.activePane = PaneChat
 	m.input.Focus()
+	return nil
 }
 
-func handleNavigation(m *Model, key string) {
+func handleNavigation(m *Model, key string) tea.Cmd {
 	if m.view.activePane == PaneRoster {
-		handleRosterNav(m, key)
-		return
+		return handleRosterNav(m, key)
 	}
 	if key == "up" {
 		m.viewport.ScrollUp(1)
 	} else if key == "down" {
 		m.viewport.ScrollDown(1)
 	}
+	return nil
 }
 
-func handleRosterNav(m *Model, key string) {
+func handleRosterNav(m *Model, key string) tea.Cmd {
 	if (key == "up" || key == "k") && m.selectedIdx > 0 {
 		m.selectedIdx--
 	}
@@ -143,5 +147,7 @@ func handleRosterNav(m *Model, key string) {
 	if len(m.roster) > 0 && m.selectedIdx < len(m.roster) {
 		m.activeJID = m.roster[m.selectedIdx].JID
 		refreshChatContent(m)
+		return checkFetchHistory(m, m.activeJID)
 	}
+	return nil
 }

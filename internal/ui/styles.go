@@ -43,13 +43,10 @@ var (
 
 	contactSelected = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(colorPurple).
-			Padding(0, 1)
+			Foreground(lipgloss.Color("#FFFFFF"))
 
 	contactNormal = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#D4D4D8")).
-			Padding(0, 1)
+			Foreground(lipgloss.Color("#A1A1AA"))
 
 	msgSelf = lipgloss.NewStyle().
 		Bold(true).

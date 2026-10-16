@@ -39,7 +39,7 @@ func renderSidebar(m Model, height int) string {
 		sb.WriteString(contactNormal.Render("No contacts\n/add <jid>"))
 	}
 	for i, item := range m.roster {
-		label := formatContactLabel(item, m.cfg.JID)
+		label := formatContactRow(item, m.cfg.JID, i == m.selectedIdx)
 		if i == m.selectedIdx {
 			sb.WriteString(contactSelected.Render(label) + "\n")
 		} else {
@@ -53,8 +53,7 @@ func renderSidebar(m Model, height int) string {
 	return style.Render(sb.String())
 }
 
-func formatContactLabel(item event.RosterItem, selfJID string) string {
-	dot := renderStatusDot(item)
+func formatContactRow(item event.RosterItem, selfJID string, isSelected bool) string {
 	name := item.Name
 	if item.JID == selfJID || (name == "" && item.JID == selfJID) {
 		name = "You (Notes)"
@@ -62,17 +61,10 @@ func formatContactLabel(item event.RosterItem, selfJID string) string {
 	if len(name) > 16 {
 		name = name[:15] + "…"
 	}
-	return fmt.Sprintf("%s %s", dot, name)
-}
-
-func renderStatusDot(item event.RosterItem) string {
-	if !item.Online {
-		return statusDotOffline.String()
+	if isSelected {
+		return fmt.Sprintf("%s %s", statusDotOnline.String(), name)
 	}
-	if item.Show == "away" || item.Show == "xa" || item.Show == "dnd" {
-		return statusDotAway.String()
-	}
-	return statusDotOnline.String()
+	return fmt.Sprintf("  %s", name)
 }
 
 func renderChat(m Model, width, height int) string {

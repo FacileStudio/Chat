@@ -8,6 +8,7 @@ import (
 	"mellium.im/xmlstream"
 	"mellium.im/xmpp"
 	"mellium.im/xmpp/disco"
+	"mellium.im/xmpp/history"
 	"mellium.im/xmpp/mux"
 	"mellium.im/xmpp/roster"
 	"mellium.im/xmpp/stanza"
@@ -21,6 +22,7 @@ type rawMessage struct {
 // NewXMPPHandler builds the multiplexer for incoming XMPP stanzas.
 func NewXMPPHandler(c *Client) xmpp.Handler {
 	msgHandler := newMessageHandler(c)
+	histHandler := history.Handle(history.NewHandler(NewHistoryHandler(c)))
 	return mux.New(
 		c.session.In().XMLNS,
 		disco.Handle(),
@@ -34,6 +36,7 @@ func NewXMPPHandler(c *Client) xmpp.Handler {
 		mux.Message(stanza.NormalMessage, xml.Name{Local: "body"}, msgHandler),
 		mux.Message(stanza.ChatMessage, xml.Name{Local: "body"}, msgHandler),
 		mux.Message(stanza.GroupChatMessage, xml.Name{Local: "body"}, msgHandler),
+		histHandler,
 	)
 }
 
