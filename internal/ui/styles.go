@@ -24,12 +24,14 @@ var (
 	sidebarStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
 			BorderForeground(colorBorder).
-			Padding(0, 1)
+			Padding(0, 1).
+			Align(lipgloss.Left)
 
 	sidebarActiveStyle = lipgloss.NewStyle().
 				BorderStyle(lipgloss.RoundedBorder()).
 				BorderForeground(colorActive).
-				Padding(0, 1)
+				Padding(0, 1).
+				Align(lipgloss.Left)
 
 	chatPaneStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).

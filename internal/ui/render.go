@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/FacileStudio/Chat/internal/event"
@@ -34,17 +33,13 @@ func renderHeader(m Model) string {
 
 func renderSidebar(m Model, height int) string {
 	var sb strings.Builder
-	sb.WriteString(lipgloss.NewStyle().Bold(true).Render("Contacts\n"))
+	sb.WriteString(lipgloss.NewStyle().Bold(true).Render("Contacts") + "\n")
 	if len(m.roster) == 0 {
-		sb.WriteString(contactNormal.Render("No contacts\n/add <jid>"))
+		sb.WriteString(contactNormal.Render("No contacts") + "\n")
+		sb.WriteString(contactNormal.Render("/add <jid>") + "\n")
 	}
 	for i, item := range m.roster {
-		label := formatContactRow(item, m.cfg.JID, i == m.selectedIdx)
-		if i == m.selectedIdx {
-			sb.WriteString(contactSelected.Render(label) + "\n")
-		} else {
-			sb.WriteString(contactNormal.Render(label) + "\n")
-		}
+		sb.WriteString(formatContactRow(item, m.cfg.JID, i == m.selectedIdx) + "\n")
 	}
 	style := sidebarStyle.Width(22).Height(height)
 	if m.view.activePane == PaneRoster {
@@ -57,14 +52,19 @@ func formatContactRow(item event.RosterItem, selfJID string, isSelected bool) st
 	name := item.Name
 	if item.JID == selfJID || (name == "" && item.JID == selfJID) {
 		name = "You (Notes)"
+	} else if name == "" {
+		name = item.JID
 	}
-	if len(name) > 16 {
-		name = name[:15] + "…"
+	runes := []rune(name)
+	if len(runes) > 16 {
+		name = string(runes[:15]) + "…"
 	}
 	if isSelected {
-		return fmt.Sprintf("%s %s", statusDotOnline.String(), name)
+		dot := lipgloss.NewStyle().Foreground(colorGreen).Render("●")
+		text := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FFFFFF")).Render(name)
+		return dot + " " + text
 	}
-	return fmt.Sprintf("  %s", name)
+	return "  " + lipgloss.NewStyle().Foreground(lipgloss.Color("#A1A1AA")).Render(name)
 }
 
 func renderChat(m Model, width, height int) string {

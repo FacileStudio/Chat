@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FacileStudio/Chat/internal/config"
 	"github.com/FacileStudio/Chat/internal/event"
 )
 
@@ -67,5 +68,22 @@ func TestFormatMsgBodyOMEMO(t *testing.T) {
 	res3 := formatMsgBody(m3)
 	if res3 != "Hello world" {
 		t.Fatalf("expected plain body, got: %s", res3)
+	}
+}
+
+func TestSidebarRenderOutput(t *testing.T) {
+	cfg := &config.Config{JID: "alice@example.com"}
+	m := New(cfg, nil, nil)
+	m.roster = []event.RosterItem{
+		{JID: "alice@example.com", Name: "You (Notes)"},
+		{JID: "bob@example.com", Name: "Bob"},
+	}
+	m.selectedIdx = 0
+	out := renderSidebar(m, 6)
+	if !strings.Contains(out, "│ ● You (Notes)") {
+		t.Fatalf("expected left-aligned selected contact, got:\n%s", out)
+	}
+	if !strings.Contains(out, "│   Bob") {
+		t.Fatalf("expected left-aligned unselected contact, got:\n%s", out)
 	}
 }
