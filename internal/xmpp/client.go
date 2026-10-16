@@ -27,6 +27,7 @@ type Client struct {
 	cancel  context.CancelFunc
 	mu      sync.Mutex
 	roster  []event.RosterItem
+	omemo   *OMEMOIdentity
 }
 
 // New creates a new uninitialized XMPP client instance.
@@ -35,11 +36,14 @@ func New(cfg *config.Config, events chan<- any) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid jid %q: %w", cfg.JID, err)
 	}
+	devID := GetOrCreateDeviceID()
+	om, _ := InitOMEMO(devID)
 	return &Client{
 		cfg:    cfg,
 		addr:   addr,
 		events: events,
 		roster: make([]event.RosterItem, 0),
+		omemo:  om,
 	}, nil
 }
 
@@ -65,6 +69,7 @@ func (c *Client) Connect(ctx context.Context) error {
 	go c.serve()
 	_ = SendPresence(ctx, s, "", "")
 	_ = FetchRoster(ctx, s, c)
+	_ = c.AnnounceOMEMODevice(ctx)
 	return nil
 }
 

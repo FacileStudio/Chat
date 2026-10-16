@@ -14,10 +14,26 @@ import (
 	"mellium.im/xmpp/stanza"
 )
 
+type rawKey struct {
+	RID uint32 `xml:"rid,attr"`
+}
+
+type rawKeysJID struct {
+	Keys []rawKey `xml:"key"`
+}
+
+type rawEncrypted struct {
+	Header struct {
+		SID     uint32       `xml:"sid,attr"`
+		Keys    []rawKey     `xml:"key"`
+		KeysJID []rawKeysJID `xml:"keys"`
+	} `xml:"header"`
+}
+
 type rawMessage struct {
 	stanza.Message
 	Body      string                      `xml:"body"`
-	Encrypted *struct{ XMLName xml.Name } `xml:"encrypted"`
+	Encrypted *rawEncrypted               `xml:"encrypted"`
 	EME       *struct{ XMLName xml.Name } `xml:"encryption"`
 }
 
@@ -38,6 +54,8 @@ func NewXMPPHandler(c *Client) xmpp.Handler {
 		mux.Message(stanza.NormalMessage, xml.Name{Local: "body"}, msgHandler),
 		mux.Message(stanza.ChatMessage, xml.Name{Local: "body"}, msgHandler),
 		mux.Message(stanza.GroupChatMessage, xml.Name{Local: "body"}, msgHandler),
+		mux.Message(stanza.NormalMessage, xml.Name{Local: "encrypted"}, msgHandler),
+		mux.Message(stanza.ChatMessage, xml.Name{Local: "encrypted"}, msgHandler),
 		histHandler,
 	)
 }
@@ -56,13 +74,42 @@ func newMessageHandler(c *Client) mux.MessageHandlerFunc {
 		c.events <- event.MessageEvent{
 			From:      msg.From.Bare().String(),
 			To:        msg.To.Bare().String(),
-			Body:      msg.Body,
+			Body:      resolveMessageBody(c, msg, isEnc),
 			Time:      time.Now(),
 			Sent:      false,
 			Encrypted: isEnc,
 		}
 		return nil
 	}
+}
+
+func resolveMessageBody(c *Client, msg rawMessage, isEnc bool) string {
+	if !isEnc || msg.Encrypted == nil {
+		return msg.Body
+	}
+	if c.omemo != nil && hasKeyForDevice(msg.Encrypted, c.omemo.DeviceID) {
+		return "🔒 [OMEMO Encrypted Message]"
+	}
+	return "🔒 [OMEMO Encrypted for other device]"
+}
+
+func hasKeyForDevice(enc *rawEncrypted, devID uint32) bool {
+	if enc == nil {
+		return false
+	}
+	for _, k := range enc.Header.Keys {
+		if k.RID == devID {
+			return true
+		}
+	}
+	for _, kj := range enc.Header.KeysJID {
+		for _, k := range kj.Keys {
+			if k.RID == devID {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func newPresenceHandler(c *Client) mux.PresenceHandlerFunc {

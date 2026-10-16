@@ -66,6 +66,9 @@ func isOMEMOFallback(body string) bool {
 }
 
 func formatMsgBody(msg event.MessageEvent) string {
+	if strings.Contains(msg.Body, "[OMEMO Encrypted for other device]") {
+		return msgEncrypted.Render("🔒 [OMEMO Encrypted for other device]")
+	}
 	if msg.Encrypted || isOMEMOFallback(msg.Body) {
 		return msgEncrypted.Render("🔒 [OMEMO Encrypted Message]")
 	}

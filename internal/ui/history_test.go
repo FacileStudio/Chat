@@ -69,6 +69,12 @@ func TestFormatMsgBodyOMEMO(t *testing.T) {
 	if res3 != "Hello world" {
 		t.Fatalf("expected plain body, got: %s", res3)
 	}
+
+	m4 := event.MessageEvent{Body: "🔒 [OMEMO Encrypted for other device]", Encrypted: true}
+	res4 := formatMsgBody(m4)
+	if !strings.Contains(res4, "🔒 [OMEMO Encrypted for other device]") {
+		t.Fatalf("expected other device badge, got: %s", res4)
+	}
 }
 
 func TestSidebarRenderOutput(t *testing.T) {

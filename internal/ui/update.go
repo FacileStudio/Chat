@@ -32,6 +32,8 @@ func handleActiveUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		handleConnectDone(&m, msg)
 	case omemoDoneMsg:
 		handleOMEMODone(&m, msg)
+	case omemoRegisterDoneMsg:
+		handleOMEMORegisterDone(&m, msg)
 	}
 	if m.view.activePane == PaneChat {
 		var inputCmd tea.Cmd
