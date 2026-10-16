@@ -1,10 +1,23 @@
 @import '@facile/muse/styles';
 @source '../node_modules/@facile/muse/src';
 
-body {
-	margin: 0;
-	background-color: var(--fc-page);
-	color: var(--fc-fg);
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-	-webkit-font-smoothing: antialiased;
+@theme inline {
+	--color-background: var(--color-fc-page);
+	--color-foreground: var(--color-fc-fg);
+	--color-card: var(--color-fc-component);
+	--color-card-foreground: var(--color-fc-fg);
+	--color-muted: var(--color-fc-surface);
+	--color-muted-foreground: var(--color-fc-fg-muted);
+	--color-secondary: var(--color-fc-surface);
+	--color-secondary-foreground: var(--color-fc-fg);
+	--color-accent: var(--color-fc-surface);
+	--color-accent-foreground: var(--color-fc-fg);
+	--color-border: var(--color-fc-border);
+	--color-input: var(--color-fc-border);
+	--color-ring: var(--color-fc-ring);
+	--color-primary: var(--color-fc-accent);
+	--color-primary-foreground: var(--color-fc-accent-fg);
+	--color-destructive: var(--color-fc-danger);
+	--color-destructive-foreground: var(--color-fc-danger-fg);
+	--font-heading: var(--font-fc-title);
 }

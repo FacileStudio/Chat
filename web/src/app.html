@@ -3,10 +3,16 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			(function () {
+				var t = localStorage.getItem('facile-chat-theme');
+				if (t === 'dark' || t === 'light') document.documentElement.classList.add(t);
+			})();
+		</script>
 		<meta name="color-scheme" content="light dark" />
 		<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
 		<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
-		<title>Facile Chat</title>
+		<title>Chat — Facile</title>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

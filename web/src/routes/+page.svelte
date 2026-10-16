@@ -1,217 +1,265 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Badge, Button, Card, Field, Input, Spinner } from '@facile/muse';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
+	let username = $state('');
+	let password = $state('');
+	let confirmPassword = $state('');
+	let inviteCode = $state('');
 	let loading = $state(false);
+	let copied = $state(false);
+
+	$effect(() => {
+		if (form?.username) {
+			username = form.username;
+		}
+	});
+
+	async function copyJid(jid: string) {
+		await navigator.clipboard.writeText(jid);
+		copied = true;
+		setTimeout(() => (copied = false), 2000);
+	}
 </script>
 
-<div class="min-h-screen bg-[var(--fc-page)] text-[var(--fc-fg)] flex flex-col justify-between selection:bg-[var(--fc-accent)] selection:text-[var(--fc-accent-fg)]">
-	<header class="border-b border-[var(--fc-border)] px-6 py-4 flex items-center justify-between">
-		<div class="flex items-center gap-3">
-			<div class="w-8 h-8 rounded-md bg-[var(--fc-accent)] text-[var(--fc-accent-fg)] font-mono font-bold flex items-center justify-center text-sm shadow-xs">
-				F
-			</div>
-			<div class="flex items-center gap-2">
-				<span class="font-semibold text-sm tracking-tight">Facile Chat</span>
-				<span class="text-xs px-2 py-0.5 rounded-full bg-[var(--fc-surface)] text-[var(--fc-fg-muted)] border border-[var(--fc-border)] font-mono">XMPP</span>
-			</div>
-		</div>
-		<div class="flex items-center gap-2 text-xs text-[var(--fc-fg-muted)]">
-			<span class="w-2 h-2 rounded-full bg-[var(--fc-success)] inline-block"></span>
-			<span class="font-mono">{data.domain}</span>
-		</div>
-	</header>
+<svelte:head>
+	<title>Chat — Private messaging for Facile</title>
+	<meta name="description" content="Self-hosted, end-to-end encrypted messaging for the Facile team." />
+</svelte:head>
 
-	<main class="max-w-4xl mx-auto px-6 py-12 w-full grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
-		<div class="md:col-span-7 flex flex-col gap-6">
-			<div>
-				<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--fc-surface)] border border-[var(--fc-border)] text-xs text-[var(--fc-fg-muted)] mb-3">
-					<span>Decentralized</span>
-					<span>&bull;</span>
-					<span>End-to-End Encrypted</span>
-					<span>&bull;</span>
-					<span>Self-Hosted</span>
+<div class="grid gap-8 lg:grid-cols-12 lg:items-start lg:gap-12">
+	<div class="flex flex-col gap-8 lg:col-span-7">
+		<div class="flex flex-col gap-3">
+			<div class="flex flex-wrap items-center gap-2">
+				<Badge tone="neutral">Self-hosted</Badge>
+				<Badge tone="neutral">End-to-end encrypted</Badge>
+				<Badge tone="neutral">No telemetry</Badge>
+			</div>
+			<h1 class="text-fc-3xl font-semibold tracking-tight text-fc-fg sm:text-fc-4xl">
+				Private messaging for the team.
+			</h1>
+			<p class="text-fc-md text-fc-fg-muted leading-relaxed">
+				Encrypted direct messaging, persistent group channels, push notifications, and low-latency audio/video calls powered by modern XMPP and WebRTC.
+			</p>
+		</div>
+
+		<div class="grid gap-3 sm:grid-cols-2">
+			<Card class="flex flex-col gap-2 p-4">
+				<div class="flex items-center gap-2 text-fc-fg">
+					<iconify-icon icon="solar:shield-check-linear" width="18" height="18" class="block"></iconify-icon>
+					<span class="text-fc-sm font-semibold">OMEMO E2EE</span>
 				</div>
-				<h1 class="text-3xl font-semibold tracking-tight text-[var(--fc-fg)]">
-					Private messaging for the Facile team.
-				</h1>
-				<p class="text-[var(--fc-fg-muted)] mt-2 text-sm leading-relaxed">
-					Self-hosted instant messaging, persistent group channels, file sharing, and encrypted WebRTC audio/video calls. No tracking, no metadata federation, and zero external dependencies.
+				<p class="text-fc-xs text-fc-fg-muted leading-relaxed">
+					Multi-device Double Ratchet encryption for 1:1 chats and private group rooms.
 				</p>
-			</div>
+			</Card>
 
-			<div class="grid grid-cols-2 gap-3 pt-2">
-				<div class="p-3.5 rounded-lg border border-[var(--fc-border)] bg-[var(--fc-component)]">
-					<div class="text-xs font-semibold text-[var(--fc-fg)]">OMEMO E2EE</div>
-					<div class="text-xs text-[var(--fc-fg-muted)] mt-1">Multi-device Double Ratchet encryption for 1:1 and private rooms.</div>
+			<Card class="flex flex-col gap-2 p-4">
+				<div class="flex items-center gap-2 text-fc-fg">
+					<iconify-icon icon="solar:videocamera-record-linear" width="18" height="18" class="block"></iconify-icon>
+					<span class="text-fc-sm font-semibold">A/V Calls</span>
 				</div>
-				<div class="p-3.5 rounded-lg border border-[var(--fc-border)] bg-[var(--fc-component)]">
-					<div class="text-xs font-semibold text-[var(--fc-fg)]">WebRTC Calling</div>
-					<div class="text-xs text-[var(--fc-fg-muted)] mt-1">Low-latency peer-to-peer audio and video via dedicated Coturn relay.</div>
-				</div>
-				<div class="p-3.5 rounded-lg border border-[var(--fc-border)] bg-[var(--fc-component)]">
-					<div class="text-xs font-semibold text-[var(--fc-fg)]">Persistent Rooms</div>
-					<div class="text-xs text-[var(--fc-fg-muted)] mt-1">Private channels on <code class="text-xs font-mono">conference.{data.domain}</code> with history sync.</div>
-				</div>
-				<div class="p-3.5 rounded-lg border border-[var(--fc-border)] bg-[var(--fc-component)]">
-					<div class="text-xs font-semibold text-[var(--fc-fg)]">Native Push</div>
-					<div class="text-xs text-[var(--fc-fg-muted)] mt-1">XEP-0357 notifications wake iOS and Android clients for incoming calls.</div>
-				</div>
-			</div>
+				<p class="text-fc-xs text-fc-fg-muted leading-relaxed">
+					Peer-to-peer encrypted WebRTC audio and video calling with dedicated TURN relay.
+				</p>
+			</Card>
 
-			<div class="pt-4 border-t border-[var(--fc-border)]">
-				<div class="text-xs font-semibold uppercase tracking-wider text-[var(--fc-fg-muted)] mb-3">Recommended Clients</div>
-				<div class="flex flex-wrap gap-2 text-xs">
-					<a href="https://dino.im" target="_blank" rel="noreferrer" class="px-3 py-1.5 rounded-md border border-[var(--fc-border)] bg-[var(--fc-surface)] hover:bg-[var(--fc-component)] transition-colors flex items-center gap-1.5">
-						<span class="font-medium">Dino</span>
-						<span class="text-[var(--fc-fg-muted)] font-mono text-[10px]">Desktop</span>
-					</a>
-					<a href="https://conversations.im" target="_blank" rel="noreferrer" class="px-3 py-1.5 rounded-md border border-[var(--fc-border)] bg-[var(--fc-surface)] hover:bg-[var(--fc-component)] transition-colors flex items-center gap-1.5">
-						<span class="font-medium">Conversations</span>
-						<span class="text-[var(--fc-fg-muted)] font-mono text-[10px]">Android</span>
-					</a>
-					<a href="https://siskin.im" target="_blank" rel="noreferrer" class="px-3 py-1.5 rounded-md border border-[var(--fc-border)] bg-[var(--fc-surface)] hover:bg-[var(--fc-component)] transition-colors flex items-center gap-1.5">
-						<span class="font-medium">Siskin IM</span>
-						<span class="text-[var(--fc-fg-muted)] font-mono text-[10px]">iOS</span>
-					</a>
-					<a href="https://gajim.org" target="_blank" rel="noreferrer" class="px-3 py-1.5 rounded-md border border-[var(--fc-border)] bg-[var(--fc-surface)] hover:bg-[var(--fc-component)] transition-colors flex items-center gap-1.5">
-						<span class="font-medium">Gajim</span>
-						<span class="text-[var(--fc-fg-muted)] font-mono text-[10px]">Windows/Linux</span>
-					</a>
+			<Card class="flex flex-col gap-2 p-4">
+				<div class="flex items-center gap-2 text-fc-fg">
+					<iconify-icon icon="solar:users-group-rounded-linear" width="18" height="18" class="block"></iconify-icon>
+					<span class="text-fc-sm font-semibold">Team Channels</span>
 				</div>
-			</div>
+				<p class="text-fc-xs text-fc-fg-muted leading-relaxed">
+					Members-only persistent channels with message archive sync across devices.
+				</p>
+			</Card>
+
+			<Card class="flex flex-col gap-2 p-4">
+				<div class="flex items-center gap-2 text-fc-fg">
+					<iconify-icon icon="solar:bell-linear" width="18" height="18" class="block"></iconify-icon>
+					<span class="text-fc-sm font-semibold">Mobile Push</span>
+				</div>
+				<p class="text-fc-xs text-fc-fg-muted leading-relaxed">
+					XEP-0357 notifications wake mobile clients on iOS and Android for messages and calls.
+				</p>
+			</Card>
 		</div>
 
-		<div class="md:col-span-5 w-full">
-			<div class="p-6 rounded-xl border border-[var(--fc-border)] bg-[var(--fc-component)] shadow-xs">
-				{#if form?.success}
-					<div class="flex flex-col gap-4">
-						<div class="w-10 h-10 rounded-full bg-[var(--fc-success)]/10 text-[var(--fc-success)] flex items-center justify-center font-bold text-lg">
-							&check;
-						</div>
-						<div>
-							<h2 class="text-lg font-semibold text-[var(--fc-fg)]">Account Created</h2>
-							<p class="text-xs text-[var(--fc-fg-muted)] mt-1">Your personal XMPP handle is ready to use immediately.</p>
-						</div>
+		<div class="flex flex-col gap-3 pt-2">
+			<span class="text-fc-xs font-medium tracking-wide uppercase text-fc-fg-muted">Recommended clients</span>
+			<div class="flex flex-wrap gap-2">
+				<Button
+					href="https://dino.im"
+					target="_blank"
+					rel="noreferrer"
+					variant="outline"
+					size="sm"
+					icon="solar:monitor-linear"
+				>
+					Dino (Linux, macOS)
+				</Button>
+				<Button
+					href="https://conversations.im"
+					target="_blank"
+					rel="noreferrer"
+					variant="outline"
+					size="sm"
+					icon="solar:smartphone-linear"
+				>
+					Conversations (Android)
+				</Button>
+				<Button
+					href="https://siskin.im"
+					target="_blank"
+					rel="noreferrer"
+					variant="outline"
+					size="sm"
+					icon="solar:smartphone-linear"
+				>
+					Siskin IM (iOS)
+				</Button>
+				<Button
+					href="https://gajim.org"
+					target="_blank"
+					rel="noreferrer"
+					variant="outline"
+					size="sm"
+					icon="solar:laptop-linear"
+				>
+					Gajim (Windows)
+				</Button>
+			</div>
+		</div>
+	</div>
 
-						<div class="p-3.5 rounded-lg border border-[var(--fc-border)] bg-[var(--fc-surface)] flex flex-col gap-1">
-							<span class="text-[10px] uppercase font-mono text-[var(--fc-fg-muted)] tracking-wider">Your Jabber ID (JID)</span>
-							<span class="font-mono font-medium text-sm text-[var(--fc-fg)] select-all">{form.jid}</span>
-						</div>
-
-						<div class="p-3.5 rounded-lg border border-[var(--fc-border)] bg-[var(--fc-surface)] text-xs text-[var(--fc-fg-muted)] leading-relaxed flex flex-col gap-1.5">
-							<div class="font-semibold text-[var(--fc-fg)]">How to connect:</div>
-							<div>1. Open your client (Dino, Conversations, Siskin).</div>
-							<div>2. Select <strong>Log In</strong> (not sign up).</div>
-							<div>3. Enter your full JID <code class="font-mono text-[11px] bg-[var(--fc-component)] px-1 py-0.5 rounded border border-[var(--fc-border)]">{form.jid}</code> and password.</div>
-						</div>
-
-						<a href="/" class="mt-2 text-center text-xs text-[var(--fc-fg-muted)] hover:text-[var(--fc-fg)] underline decoration-[var(--fc-border)] underline-offset-4">
-							Register another account
-						</a>
+	<div class="w-full lg:col-span-5">
+		<Card class="flex flex-col gap-5 p-6 sm:p-7">
+			{#if form?.success}
+				<div class="flex flex-col gap-4">
+					<div class="flex flex-col gap-1">
+						<h2 class="text-fc-xl font-semibold tracking-tight text-fc-fg">Account created</h2>
+						<p class="text-fc-sm text-fc-fg-muted">Your personal handle is ready to connect.</p>
 					</div>
-				{:else}
-					<div class="flex flex-col gap-4">
-						<div>
-							<h2 class="text-lg font-semibold text-[var(--fc-fg)]">Create an Account</h2>
-							<p class="text-xs text-[var(--fc-fg-muted)] mt-1">Register your handle to start chatting on {data.domain}.</p>
-						</div>
 
-						{#if form?.error}
-							<div class="p-3 rounded-lg border border-[var(--fc-danger)]/30 bg-[var(--fc-danger)]/10 text-[var(--fc-danger)] text-xs leading-relaxed">
-								{form.error}
-							</div>
-						{/if}
+					<Alert tone="success" title="Success">
+						Your handle has been provisioned on {data.domain}.
+					</Alert>
 
-						<form
-							method="POST"
-							use:enhance={() => {
-								loading = true;
-								return async ({ update }) => {
-									loading = false;
-									await update();
-								};
-							}}
-							class="flex flex-col gap-3.5"
-						>
-							<div class="flex flex-col gap-1.5">
-								<label for="username" class="text-xs font-medium text-[var(--fc-fg)]">Username</label>
-								<div class="flex items-center rounded-md border border-[var(--fc-border)] bg-[var(--fc-page)] focus-within:ring-2 focus-within:ring-[var(--fc-ring)] focus-within:border-transparent transition-all">
-									<input
-										id="username"
-										name="username"
-										type="text"
-										required
-										autocomplete="username"
-										placeholder="username"
-										value={form?.username || ''}
-										class="w-full bg-transparent px-3 py-2 text-sm text-[var(--fc-fg)] placeholder:text-[var(--fc-fg-muted)]/50 focus:outline-hidden"
-									/>
-									<span class="pr-3 text-xs font-mono text-[var(--fc-fg-muted)] select-none">@{data.domain}</span>
-								</div>
-							</div>
-
-							<div class="flex flex-col gap-1.5">
-								<label for="password" class="text-xs font-medium text-[var(--fc-fg)]">Password</label>
-								<input
-									id="password"
-									name="password"
-									type="password"
-									required
-									autocomplete="new-password"
-									placeholder="At least 8 characters"
-									class="w-full rounded-md border border-[var(--fc-border)] bg-[var(--fc-page)] px-3 py-2 text-sm text-[var(--fc-fg)] placeholder:text-[var(--fc-fg-muted)]/50 focus:outline-hidden focus:ring-2 focus:ring-[var(--fc-ring)] focus:border-transparent transition-all"
-								/>
-							</div>
-
-							<div class="flex flex-col gap-1.5">
-								<label for="confirmPassword" class="text-xs font-medium text-[var(--fc-fg)]">Confirm Password</label>
-								<input
-									id="confirmPassword"
-									name="confirmPassword"
-									type="password"
-									required
-									autocomplete="new-password"
-									placeholder="Repeat your password"
-									class="w-full rounded-md border border-[var(--fc-border)] bg-[var(--fc-page)] px-3 py-2 text-sm text-[var(--fc-fg)] placeholder:text-[var(--fc-fg-muted)]/50 focus:outline-hidden focus:ring-2 focus:ring-[var(--fc-ring)] focus:border-transparent transition-all"
-								/>
-							</div>
-
-							{#if data.inviteRequired}
-								<div class="flex flex-col gap-1.5">
-									<label for="inviteCode" class="text-xs font-medium text-[var(--fc-fg)]">Team Invite Code</label>
-									<input
-										id="inviteCode"
-										name="inviteCode"
-										type="text"
-										required
-										placeholder="Provided by administrator"
-										class="w-full rounded-md border border-[var(--fc-border)] bg-[var(--fc-page)] px-3 py-2 text-sm text-[var(--fc-fg)] placeholder:text-[var(--fc-fg-muted)]/50 focus:outline-hidden focus:ring-2 focus:ring-[var(--fc-ring)] focus:border-transparent transition-all"
-									/>
-								</div>
-							{/if}
-
-							<button
-								type="submit"
-								disabled={loading}
-								class="mt-2 w-full py-2.5 px-4 rounded-md bg-[var(--fc-accent)] text-[var(--fc-accent-fg)] text-xs font-medium tracking-tight hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+					<div class="flex flex-col gap-1.5 rounded-fc-md bg-fc-surface p-3.5">
+						<span class="text-fc-xs font-medium text-fc-fg-muted">Your Jabber ID (JID)</span>
+						<div class="flex items-center justify-between gap-2">
+							<span class="font-fc-mono text-fc-sm font-semibold text-fc-fg select-all">{form.jid}</span>
+							<Button
+								variant="ghost"
+								size="sm"
+								icon={copied ? 'solar:check-circle-linear' : 'solar:copy-linear'}
+								onclick={() => copyJid(form.jid)}
 							>
-								{loading ? 'Creating account...' : 'Create Account'}
-							</button>
-						</form>
+								{copied ? 'Copied' : 'Copy'}
+							</Button>
+						</div>
 					</div>
-				{/if}
-			</div>
-		</div>
-	</main>
 
-	<footer class="border-t border-[var(--fc-border)] px-6 py-4 flex flex-col sm:flex-row items-center justify-between text-xs text-[var(--fc-fg-muted)] gap-2">
-		<div>Facile Suite &middot; Privacy-first infrastructure</div>
-		<div class="flex items-center gap-4">
-			<a href="https://chat.facile.studio/admin/" class="hover:text-[var(--fc-fg)] transition-colors">Admin Console</a>
-			<a href="https://compliance.conversations.im/server/{data.domain}/" target="_blank" rel="noreferrer" class="hover:text-[var(--fc-fg)] transition-colors">Compliance Score</a>
-		</div>
-	</footer>
+					<div class="flex flex-col gap-2 rounded-fc-md bg-fc-surface p-3.5 text-fc-xs text-fc-fg-muted leading-relaxed">
+						<div class="font-semibold text-fc-fg">Connecting from your client:</div>
+						<p>1. Open Dino, Conversations, or Siskin.</p>
+						<p>2. Select <strong>Log In</strong> (not sign up).</p>
+						<p>3. Enter your JID <strong class="font-fc-mono text-fc-fg">{form.jid}</strong> and password.</p>
+					</div>
+
+					<Button href="/" variant="outline" size="md" class="w-full">
+						Register another account
+					</Button>
+				</div>
+			{:else}
+				<div class="flex flex-col gap-1">
+					<h2 class="text-fc-xl font-semibold tracking-tight text-fc-fg">Create an account</h2>
+					<p class="text-fc-sm text-fc-fg-muted">Register your handle to join {data.domain}.</p>
+				</div>
+
+				{#if form?.error}
+					<Alert tone="danger">{form.error}</Alert>
+				{/if}
+
+				<form
+					method="POST"
+					use:enhance={() => {
+						loading = true;
+						return async ({ update }) => {
+							loading = false;
+							await update();
+						};
+					}}
+					class="flex flex-col gap-4"
+				>
+					<Field label="Username" helper="3 to 32 lowercase letters, numbers, dots, or hyphens">
+						<Input
+							bind:value={username}
+							name="username"
+							type="text"
+							placeholder="username"
+							autocomplete="username"
+							required
+							disabled={loading}
+						/>
+					</Field>
+
+					<Field label="Password" helper="At least 8 characters">
+						<Input
+							bind:value={password}
+							name="password"
+							type="password"
+							placeholder="••••••••"
+							autocomplete="new-password"
+							required
+							disabled={loading}
+						/>
+					</Field>
+
+					<Field label="Confirm password">
+						<Input
+							bind:value={confirmPassword}
+							name="confirmPassword"
+							type="password"
+							placeholder="••••••••"
+							autocomplete="new-password"
+							required
+							disabled={loading}
+						/>
+					</Field>
+
+					{#if data.inviteRequired}
+						<Field label="Invite code" helper="Required team access token">
+							<Input
+								bind:value={inviteCode}
+								name="inviteCode"
+								type="text"
+								placeholder="Enter invite code"
+								required
+								disabled={loading}
+							/>
+						</Field>
+					{/if}
+
+					<Button
+						type="submit"
+						size="lg"
+						icon={loading ? undefined : 'solar:user-plus-linear'}
+						disabled={loading}
+						class="w-full"
+					>
+						{#if loading}
+							<Spinner size="sm" label="Creating account..." />
+							Creating account...
+						{:else}
+							Create account
+						{/if}
+					</Button>
+				</form>
+			{/if}
+		</Card>
+	</div>
 </div>
