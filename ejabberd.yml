@@ -11,6 +11,11 @@ loglevel: info
 acme:
   auto: false
 
+ca_file: /opt/ejabberd/conf/cacert.pem
+certfiles:
+  - /opt/ejabberd/ssl/*.pem
+  - /opt/ejabberd/conf/server.pem
+
 registration_timeout: 300
 
 listen:

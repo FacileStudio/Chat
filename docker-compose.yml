@@ -1,8 +1,43 @@
 services:
+  cert-extractor:
+    image: python:3-alpine
+    container_name: cert-extractor
+    restart: unless-stopped
+    volumes:
+      - /etc/dokploy/traefik/dynamic/acme.json:/acme.json:ro
+      - ejabberd_ssl:/ssl
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          python3 -c "
+        import json, base64, os
+        try:
+            with open('/acme.json') as f:
+                data = json.load(f)
+            for resolver, content in data.items():
+                for c in content.get('Certificates', []):
+                    domain = c.get('domain', {}).get('main')
+                    if domain:
+                        cert = base64.b64decode(c['certificate']).decode()
+                        key = base64.b64decode(c['key']).decode()
+                        out_path = f'/ssl/{domain}.pem'
+                        with open(out_path, 'w') as out:
+                            out.write(key + '\n' + cert)
+                        os.chmod(out_path, 0o644)
+        except Exception:
+            pass
+        "
+          sleep 3600
+        done
+
   ejabberd:
     image: ghcr.io/processone/ejabberd:latest
     container_name: ejabberd
     restart: unless-stopped
+    depends_on:
+      - cert-extractor
     ports:
       - "5222:5222"
       - "5269:5269"
@@ -15,6 +50,7 @@ services:
     volumes:
       - ejabberd_data:/opt/ejabberd/database
       - ejabberd_upload:/opt/ejabberd/upload
+      - ejabberd_ssl:/opt/ejabberd/ssl:ro
       - ./ejabberd.yml:/opt/ejabberd/conf/ejabberd.yml:ro
     labels:
       - "traefik.enable=true"
@@ -47,3 +83,4 @@ services:
 volumes:
   ejabberd_data:
   ejabberd_upload:
+  ejabberd_ssl:
