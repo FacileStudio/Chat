@@ -4,6 +4,15 @@ All notable changes are documented here. Format derives from Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.1.8] - 2026-10-16
+
+### Fixed
+
+- Prevent blank `🔒 ` line rendering when encrypted message body is empty; cleanly label with status.
+- Parse full encrypted XML elements in MAM history and attempt decryption for archived messages.
+- Deduplicate duplicate MAM messages and carbon copies within a 5-second window so redundant fallback lines are removed.
+- Automatically replace encrypted placeholders when real decrypted message content is available.
+
 ## [v0.1.7] - 2026-10-16
 
 ### Fixed
