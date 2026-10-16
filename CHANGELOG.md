@@ -4,6 +4,19 @@ All notable changes are documented here. Format derives from Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.1.1] - 2026-10-16
+
+### Fixed
+
+- Correct horizontal and vertical container dimensions in TUI layout to prevent overflow past terminal borders.
+- Fit viewport, header, sidebar, and input box precisely to terminal width and height.
+
+### Added
+
+- In-terminal login setup modal when credentials are not yet configured.
+- Support for CHAT_USER and CHAT_PASSWORD environment variables alongside CHAT_JID and CHAT_PASS.
+- Support for ~/.chat.yml and ~/.chat.yaml config file paths.
+
 ## [v0.1.0] - 2026-10-16
 
 ### Added
