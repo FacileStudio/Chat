@@ -4,6 +4,15 @@ All notable changes are documented here. Format derives from Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.1.2] - 2026-10-16
+
+### Fixed
+
+- Made conversations list interactive with keyboard navigation (Up, Down, j, k, Enter) and mouse clicks.
+- Display username in the purple header box and removed "FACILE CHAT" label.
+- Expand main chat container fully to the right border of the terminal.
+- Name conversation with oneself as "You (Notes)" with online presence instead of empty name.
+
 ## [v0.1.1] - 2026-10-16
 
 ### Fixed
