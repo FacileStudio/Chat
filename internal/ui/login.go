@@ -73,3 +73,10 @@ func handleLoginSubmit(m *Model) (tea.Model, tea.Cmd) {
 	m.input.Focus()
 	return *m, connectCmd(m.client)
 }
+
+func handleConnectDone(m *Model, msg connectDoneMsg) {
+	if msg.err != nil {
+		m.status.err = msg.err
+		m.status.text = msg.err.Error()
+	}
+}

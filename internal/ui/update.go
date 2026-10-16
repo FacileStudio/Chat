@@ -29,10 +29,9 @@ func handleActiveUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	case xmppEventMsg:
 		return m, handleXMPPEvent(&m, msg)
 	case connectDoneMsg:
-		if msg.err != nil {
-			m.status.err = msg.err
-			m.status.text = msg.err.Error()
-		}
+		handleConnectDone(&m, msg)
+	case omemoDoneMsg:
+		handleOMEMODone(&m, msg)
 	}
 	if m.view.activePane == PaneChat {
 		var inputCmd tea.Cmd

@@ -81,11 +81,12 @@ func refreshChatContent(m *Model) {
 	var sb strings.Builder
 	for _, msg := range msgs {
 		t := msgTime.Render(formatMsgTime(msg.Time))
+		body := formatMsgBody(msg)
 		if msg.Sent {
-			sb.WriteString(fmt.Sprintf("%s %s: %s\n", t, msgSelf.Render("You"), msg.Body))
+			sb.WriteString(fmt.Sprintf("%s %s: %s\n", t, msgSelf.Render("You"), body))
 		} else {
 			sender := msgPeer.Render(msg.From)
-			sb.WriteString(fmt.Sprintf("%s %s: %s\n", t, sender, msg.Body))
+			sb.WriteString(fmt.Sprintf("%s %s: %s\n", t, sender, body))
 		}
 	}
 	m.viewport.SetContent(sb.String())

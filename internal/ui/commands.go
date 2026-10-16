@@ -27,6 +27,8 @@ func handleCommand(m *Model, input string) tea.Cmd {
 		return cmdClear(m)
 	case "/history":
 		return cmdHistory(m)
+	case "/omemo":
+		return cmdOMEMO(m, parts)
 	case "/quit", "/q":
 		return tea.Quit
 	default:
@@ -57,6 +59,7 @@ func cmdHelp(m *Model) tea.Cmd {
 		"  /add <jid> [name]    - Add contact to roster\n" +
 		"  /status <show> [msg] - Set presence (chat, away, dnd, offline)\n" +
 		"  /history             - Fetch past conversation messages\n" +
+		"  /omemo [clear]       - OMEMO encryption status or reset devices\n" +
 		"  /clear               - Clear current chat history\n" +
 		"  /quit                - Exit application\n" +
 		"Shortcuts:\n" +

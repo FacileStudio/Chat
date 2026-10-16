@@ -63,6 +63,10 @@ var (
 		Foreground(colorYellow).
 		Italic(true)
 
+	msgEncrypted = lipgloss.NewStyle().
+			Foreground(colorYellow).
+			Italic(true)
+
 	statusDotOnline = lipgloss.NewStyle().
 			Foreground(colorGreen).
 			SetString("●")

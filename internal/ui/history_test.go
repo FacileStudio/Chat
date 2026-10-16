@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -44,5 +45,27 @@ func TestInsertMessageDeduplicationAndSorting(t *testing.T) {
 	}
 	if msgs[0].Body != "Earlier" || msgs[1].Body != "Hello" {
 		t.Fatalf("expected sorted messages, got %+v", msgs)
+	}
+}
+
+func TestFormatMsgBodyOMEMO(t *testing.T) {
+	fb1 := "I sent you an OMEMO encrypted message but your client doesn’t seem to support that."
+	m1 := event.MessageEvent{Body: fb1}
+	res1 := formatMsgBody(m1)
+	if !strings.Contains(res1, "🔒 [OMEMO Encrypted Message]") {
+		t.Fatalf("expected encrypted badge for fb1, got: %s", res1)
+	}
+
+	fb2 := "I sent you an OMEMO encrypted message but your client doesn’t seem to support that. Find more information on https://conversations.im/omemo"
+	m2 := event.MessageEvent{Body: fb2}
+	res2 := formatMsgBody(m2)
+	if !strings.Contains(res2, "🔒 [OMEMO Encrypted Message]") {
+		t.Fatalf("expected encrypted badge for fb2, got: %s", res2)
+	}
+
+	m3 := event.MessageEvent{Body: "Hello world"}
+	res3 := formatMsgBody(m3)
+	if res3 != "Hello world" {
+		t.Fatalf("expected plain body, got: %s", res3)
 	}
 }

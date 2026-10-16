@@ -16,9 +16,11 @@ import (
 )
 
 type mamForwardedMsg struct {
-	To   jid.JID `xml:"to,attr"`
-	From jid.JID `xml:"from,attr"`
-	Body string  `xml:"body"`
+	To        jid.JID                     `xml:"to,attr"`
+	From      jid.JID                     `xml:"from,attr"`
+	Body      string                      `xml:"body"`
+	Encrypted *struct{ XMLName xml.Name } `xml:"encrypted"`
+	EME       *struct{ XMLName xml.Name } `xml:"encryption"`
 }
 
 type mamForwarded struct {
@@ -41,7 +43,8 @@ func NewHistoryHandler(c *Client) mux.MessageHandlerFunc {
 		if err := d.Decode(&res); err != nil {
 			return err
 		}
-		if res.Forward.Msg.Body == "" {
+		isEnc := IsOMEMOMessage(res.Forward.Msg.Body, res.Forward.Msg.Encrypted != nil, res.Forward.Msg.EME != nil)
+		if res.Forward.Msg.Body == "" && !isEnc {
 			return nil
 		}
 		msgTime := res.Forward.Delay.Time
@@ -51,11 +54,12 @@ func NewHistoryHandler(c *Client) mux.MessageHandlerFunc {
 		fromStr := res.Forward.Msg.From.Bare().String()
 		toStr := res.Forward.Msg.To.Bare().String()
 		c.events <- event.MessageEvent{
-			From: fromStr,
-			To:   toStr,
-			Body: res.Forward.Msg.Body,
-			Time: msgTime,
-			Sent: fromStr == c.addr.Bare().String(),
+			From:      fromStr,
+			To:        toStr,
+			Body:      res.Forward.Msg.Body,
+			Time:      msgTime,
+			Sent:      fromStr == c.addr.Bare().String(),
+			Encrypted: isEnc,
 		}
 		return nil
 	}

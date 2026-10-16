@@ -16,7 +16,9 @@ import (
 
 type rawMessage struct {
 	stanza.Message
-	Body string `xml:"body"`
+	Body      string                      `xml:"body"`
+	Encrypted *struct{ XMLName xml.Name } `xml:"encrypted"`
+	EME       *struct{ XMLName xml.Name } `xml:"encryption"`
 }
 
 // NewXMPPHandler builds the multiplexer for incoming XMPP stanzas.
@@ -47,15 +49,17 @@ func newMessageHandler(c *Client) mux.MessageHandlerFunc {
 		if err := d.Decode(&msg); err != nil {
 			return err
 		}
-		if msg.Body == "" {
+		isEnc := IsOMEMOMessage(msg.Body, msg.Encrypted != nil, msg.EME != nil)
+		if msg.Body == "" && !isEnc {
 			return nil
 		}
 		c.events <- event.MessageEvent{
-			From: msg.From.Bare().String(),
-			To:   msg.To.Bare().String(),
-			Body: msg.Body,
-			Time: time.Now(),
-			Sent: false,
+			From:      msg.From.Bare().String(),
+			To:        msg.To.Bare().String(),
+			Body:      msg.Body,
+			Time:      time.Now(),
+			Sent:      false,
+			Encrypted: isEnc,
 		}
 		return nil
 	}

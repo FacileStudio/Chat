@@ -2,6 +2,7 @@ package ui
 
 import (
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/FacileStudio/Chat/internal/event"
@@ -55,4 +56,18 @@ func formatMsgTime(t time.Time) string {
 		return t.Format("15:04")
 	}
 	return t.Format("02 Jan 15:04")
+}
+
+func isOMEMOFallback(body string) bool {
+	if strings.Contains(body, "OMEMO encrypted message") {
+		return true
+	}
+	return strings.Contains(body, "conversations.im/omemo")
+}
+
+func formatMsgBody(msg event.MessageEvent) string {
+	if msg.Encrypted || isOMEMOFallback(msg.Body) {
+		return msgEncrypted.Render("🔒 [OMEMO Encrypted Message]")
+	}
+	return msg.Body
 }

@@ -23,11 +23,12 @@ type StatusEvent struct {
 
 // MessageEvent represents an incoming or outgoing chat message.
 type MessageEvent struct {
-	From string
-	To   string
-	Body string
-	Time time.Time
-	Sent bool
+	From      string
+	To        string
+	Body      string
+	Time      time.Time
+	Sent      bool
+	Encrypted bool
 }
 
 // RosterItem represents a contact entry in the roster.
