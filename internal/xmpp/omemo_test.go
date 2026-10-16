@@ -75,3 +75,27 @@ func TestHasKeyForDevice(t *testing.T) {
 		t.Fatal("expected false for nil encrypted element")
 	}
 }
+
+func TestFindDeviceKey(t *testing.T) {
+	var enc rawEncrypted
+	enc.Header.SID = 42
+	enc.Header.Keys = []rawKey{{RID: 100, Data: "key100", PreKey: true}}
+	var kj rawKeysJID
+	kj.Keys = []rawKey{{RID: 200, Data: "key200", Kex: true}}
+	enc.Header.KeysJID = []rawKeysJID{kj}
+
+	data1, isPre1, ok1 := findDeviceKey(&enc, 100)
+	if !ok1 || data1 != "key100" || !isPre1 {
+		t.Fatalf("expected key100, got: %s, %v, %v", data1, isPre1, ok1)
+	}
+
+	data2, isPre2, ok2 := findDeviceKey(&enc, 200)
+	if !ok2 || data2 != "key200" || !isPre2 {
+		t.Fatalf("expected key200, got: %s, %v, %v", data2, isPre2, ok2)
+	}
+
+	_, _, ok3 := findDeviceKey(&enc, 999)
+	if ok3 {
+		t.Fatal("expected false for missing device")
+	}
+}

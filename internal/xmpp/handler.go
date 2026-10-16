@@ -15,19 +15,26 @@ import (
 )
 
 type rawKey struct {
-	RID uint32 `xml:"rid,attr"`
+	RID    uint32 `xml:"rid,attr"`
+	PreKey bool   `xml:"prekey,attr"`
+	Kex    bool   `xml:"kex,attr"`
+	Data   string `xml:",chardata"`
 }
 
 type rawKeysJID struct {
 	Keys []rawKey `xml:"key"`
 }
 
+type rawHeader struct {
+	SID     uint32       `xml:"sid,attr"`
+	Keys    []rawKey     `xml:"key"`
+	KeysJID []rawKeysJID `xml:"keys"`
+	IV      string       `xml:"iv"`
+}
+
 type rawEncrypted struct {
-	Header struct {
-		SID     uint32       `xml:"sid,attr"`
-		Keys    []rawKey     `xml:"key"`
-		KeysJID []rawKeysJID `xml:"keys"`
-	} `xml:"header"`
+	Header  rawHeader `xml:"header"`
+	Payload string    `xml:"payload"`
 }
 
 type rawMessage struct {
@@ -88,6 +95,10 @@ func resolveMessageBody(c *Client, msg rawMessage, isEnc bool) string {
 		return msg.Body
 	}
 	if c.omemo != nil && hasKeyForDevice(msg.Encrypted, c.omemo.DeviceID) {
+		decrypted, err := c.DecryptOMEMO(msg.From.Bare().String(), msg.Encrypted)
+		if err == nil && len(decrypted) > 0 {
+			return string(decrypted)
+		}
 		return "🔒 [OMEMO Encrypted Message]"
 	}
 	return "🔒 [OMEMO Encrypted for other device]"

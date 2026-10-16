@@ -53,15 +53,15 @@ func TestFormatMsgBodyOMEMO(t *testing.T) {
 	fb1 := "I sent you an OMEMO encrypted message but your client doesn’t seem to support that."
 	m1 := event.MessageEvent{Body: fb1}
 	res1 := formatMsgBody(m1)
-	if !strings.Contains(res1, "🔒 [OMEMO Encrypted Message]") {
-		t.Fatalf("expected encrypted badge for fb1, got: %s", res1)
+	if !strings.Contains(res1, "🔒 [OMEMO Encrypted for other device]") {
+		t.Fatalf("expected other device badge for fb1, got: %s", res1)
 	}
 
 	fb2 := "I sent you an OMEMO encrypted message but your client doesn’t seem to support that. Find more information on https://conversations.im/omemo"
 	m2 := event.MessageEvent{Body: fb2}
 	res2 := formatMsgBody(m2)
-	if !strings.Contains(res2, "🔒 [OMEMO Encrypted Message]") {
-		t.Fatalf("expected encrypted badge for fb2, got: %s", res2)
+	if !strings.Contains(res2, "🔒 [OMEMO Encrypted for other device]") {
+		t.Fatalf("expected other device badge for fb2, got: %s", res2)
 	}
 
 	m3 := event.MessageEvent{Body: "Hello world"}
@@ -70,10 +70,10 @@ func TestFormatMsgBodyOMEMO(t *testing.T) {
 		t.Fatalf("expected plain body, got: %s", res3)
 	}
 
-	m4 := event.MessageEvent{Body: "🔒 [OMEMO Encrypted for other device]", Encrypted: true}
+	m4 := event.MessageEvent{Body: "Secret message", Encrypted: true}
 	res4 := formatMsgBody(m4)
-	if !strings.Contains(res4, "🔒 [OMEMO Encrypted for other device]") {
-		t.Fatalf("expected other device badge, got: %s", res4)
+	if !strings.Contains(res4, "🔒 Secret message") {
+		t.Fatalf("expected decrypted text with lock icon, got: %s", res4)
 	}
 }
 

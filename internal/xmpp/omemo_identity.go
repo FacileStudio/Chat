@@ -113,7 +113,8 @@ func (c *Client) AnnounceOMEMODevice(ctx context.Context) error {
 	legacy := deviceNodeInfo{node: "eu.siacs.conversations.axolotl.devicelist", root: "list", space: "eu.siacs.conversations.axolotl"}
 	_ = publishDevice(ctx, s, modern, om.DeviceID)
 	_ = publishDevice(ctx, s, legacy, om.DeviceID)
-	return publishBundle(ctx, s, om)
+	_ = publishBundle(ctx, s, om)
+	return publishLegacyBundle(ctx, s, om)
 }
 
 func publishDevice(ctx context.Context, s *xmpp.Session, info deviceNodeInfo, id uint32) error {
@@ -148,5 +149,27 @@ func publishBundle(ctx context.Context, s *xmpp.Session, om *OMEMOIdentity) erro
 	)
 	itemID := strconv.FormatUint(uint64(om.DeviceID), 10)
 	_, err := pubsub.Publish(ctx, s, "urn:xmpp:omemo:2:bundles", itemID, bundleItem)
+	return err
+}
+
+func publishLegacyBundle(ctx context.Context, s *xmpp.Session, om *OMEMOIdentity) error {
+	spkKey := append([]byte{0x05}, om.Bundle.SignedPreKey...)
+	spkB64 := base64.StdEncoding.EncodeToString(spkKey)
+	sigB64 := base64.StdEncoding.EncodeToString(om.Bundle.SignedPreKeySignature)
+	ikKey := append([]byte{0x05}, om.Bundle.IdentityKey...)
+	ikB64 := base64.StdEncoding.EncodeToString(ikKey)
+	bundleItem := xmlstream.Wrap(
+		xmlstream.MultiReader(
+			xmlstream.Wrap(xmlstream.Token(xml.CharData(spkB64)), xml.StartElement{
+				Name: xml.Name{Space: "eu.siacs.conversations.axolotl", Local: "signedPreKeyPublic"},
+				Attr: []xml.Attr{{Name: xml.Name{Local: "signedPreKeyId"}, Value: strconv.FormatUint(uint64(om.Bundle.SignedPreKeyID), 10)}},
+			}),
+			xmlstream.Wrap(xmlstream.Token(xml.CharData(sigB64)), xml.StartElement{Name: xml.Name{Space: "eu.siacs.conversations.axolotl", Local: "signedPreKeySignature"}}),
+			xmlstream.Wrap(xmlstream.Token(xml.CharData(ikB64)), xml.StartElement{Name: xml.Name{Space: "eu.siacs.conversations.axolotl", Local: "identityKey"}}),
+		),
+		xml.StartElement{Name: xml.Name{Space: "eu.siacs.conversations.axolotl", Local: "bundle"}},
+	)
+	node := fmt.Sprintf("eu.siacs.conversations.axolotl.bundles:%d", om.DeviceID)
+	_, err := pubsub.Publish(ctx, s, node, "current", bundleItem)
 	return err
 }

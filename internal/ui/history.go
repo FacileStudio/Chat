@@ -69,8 +69,14 @@ func formatMsgBody(msg event.MessageEvent) string {
 	if strings.Contains(msg.Body, "[OMEMO Encrypted for other device]") {
 		return msgEncrypted.Render("🔒 [OMEMO Encrypted for other device]")
 	}
-	if msg.Encrypted || isOMEMOFallback(msg.Body) {
-		return msgEncrypted.Render("🔒 [OMEMO Encrypted Message]")
+	if isOMEMOFallback(msg.Body) {
+		return msgEncrypted.Render("🔒 [OMEMO Encrypted for other device]")
+	}
+	if strings.HasPrefix(msg.Body, "🔒 [OMEMO") {
+		return msgEncrypted.Render(msg.Body)
+	}
+	if msg.Encrypted {
+		return msgEncrypted.Render("🔒 ") + msg.Body
 	}
 	return msg.Body
 }
