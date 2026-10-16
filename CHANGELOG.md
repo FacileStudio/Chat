@@ -4,6 +4,14 @@ All notable changes are documented here. Format derives from Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.1.5] - 2026-10-16
+
+### Fixed
+
+- Left-align conversation names and active indicator dot cleanly in the sidebar.
+- Fix newline rendering inside Lipgloss header styles that caused contacts to be indented and wrapped prematurely.
+- Use rune-safe truncation for contact names to prevent multi-byte UTF-8 slicing.
+
 ## [v0.1.4] - 2026-10-16
 
 ### Fixed
