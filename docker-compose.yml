@@ -32,6 +32,25 @@ services:
           sleep 3600
         done
 
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: xmpp-web
+    restart: unless-stopped
+    environment:
+      - DOMAIN=${DOMAIN}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-${REGISTER_ADMIN_PASSWORD:-}}
+      - EJABBERD_API_URL=http://ejabberd:5443/api
+      - INVITE_CODE=${INVITE_CODE:-}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web.priority=10"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+
   ejabberd:
     image: ghcr.io/processone/ejabberd:latest
     container_name: ejabberd
@@ -54,9 +73,10 @@ services:
       - ./ejabberd.yml:/opt/ejabberd/conf/ejabberd.yml:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.ejabberd.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.ejabberd.rule=Host(`${DOMAIN}`) && (PathPrefix(`/admin`) || PathPrefix(`/upload`) || PathPrefix(`/ws`) || PathPrefix(`/bosh`) || PathPrefix(`/api`))"
       - "traefik.http.routers.ejabberd.entrypoints=websecure"
       - "traefik.http.routers.ejabberd.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ejabberd.priority=100"
       - "traefik.http.services.ejabberd.loadbalancer.server.port=5443"
 
   coturn:

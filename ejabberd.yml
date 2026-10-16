@@ -79,6 +79,15 @@ api_permissions:
     from: ejabberd_web_admin
     who: admin
     what: "*"
+  "http access":
+    from: mod_http_api
+    who:
+      access:
+        allow:
+          - acl: loopback
+          - acl: admin
+    what:
+      - "*"
 
 modules:
   mod_avatar: {}

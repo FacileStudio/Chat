@@ -11,7 +11,11 @@ The stack runs ejabberd and Coturn with zero hardcoded credentials or IP address
 ├── .env.example
 ├── docker-compose.yml
 ├── ejabberd.yml
-└── README.md
+├── README.md
+└── web/
+    ├── Dockerfile
+    ├── package.json
+    └── src/
 ```
 
 ## Prerequisites
@@ -57,9 +61,13 @@ openssl rand -hex 32
 
 ## User registration and privacy
 
+### Web registration
+
+Anyone can visit `https://<DOMAIN>/` in any web browser to view the Facile Chat landing page, create a personal handle, and view recommended clients.
+
 ### In-band registration
 
-Anyone can open an XMPP client (Conversations, Dino, Siskin, Gajim), choose "Create account", enter the server domain, and register immediately.
+Clients that implement in-band registration (Conversations, Gajim, Siskin) can register directly inside the app. Clients like Dino that expect external accounts direct users to `https://<DOMAIN>/` to sign up.
 
 To prevent bot swarms:
 - `registration_timeout` limits account creation to one per 5 minutes per IP address.
