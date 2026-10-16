@@ -4,6 +4,21 @@ All notable changes are documented here. Format derives from Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.1.3] - 2026-10-16
+
+### Fixed
+
+- Removed purple background from selected conversation in the sidebar list.
+- Left-aligned conversation names in the sidebar with consistent indentation.
+- Moved the green dot indicator to show the currently selected conversation during navigation.
+
+### Added
+
+- Support for fetching past conversation messages using XMPP MAM (Message Archive Management, XEP-0313).
+- Automatic history retrieval upon connecting and selecting conversations.
+- `/history` command to manually reload past conversation messages.
+- Message deduplication and chronological ordering with date and time formatting.
+
 ## [v0.1.2] - 2026-10-16
 
 ### Fixed
