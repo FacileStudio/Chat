@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   ejabberd:
     image: ghcr.io/processone/ejabberd:latest
@@ -11,8 +9,12 @@ services:
     environment:
       - DOMAIN=${DOMAIN}
       - TURN_SECRET=${TURN_SECRET}
+      - EJABBERD_MACRO_HOST=${DOMAIN}
+      - EJABBERD_MACRO_TURN_SECRET=${TURN_SECRET}
+      - REGISTER_ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
     volumes:
       - ejabberd_data:/opt/ejabberd/database
+      - ejabberd_upload:/opt/ejabberd/upload
       - ./ejabberd.yml:/opt/ejabberd/conf/ejabberd.yml:ro
     labels:
       - "traefik.enable=true"
@@ -44,3 +46,4 @@ services:
 
 volumes:
   ejabberd_data:
+  ejabberd_upload:

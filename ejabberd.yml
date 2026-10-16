@@ -1,7 +1,16 @@
-loglevel: info
+define_macro:
+  HOST: localhost
+  TURN_SECRET: secret
 
 hosts:
-  - "$(DOMAIN)"
+  - HOST
+
+loglevel: info
+
+acme:
+  auto: false
+
+registration_timeout: 300
 
 listen:
   - port: 5222
@@ -16,38 +25,142 @@ listen:
     ip: "::"
     module: ejabberd_http
     request_handlers:
-      "/admin": ejabberd_web_admin
-      "/ws": ejabberd_http_ws
-      "/bosh": mod_bosh
+      /admin: ejabberd_web_admin
+      /api: mod_http_api
+      /bosh: mod_bosh
+      /ws: ejabberd_http_ws
+      /upload: mod_http_upload
+
+acl:
+  admin:
+    user:
+      - "admin@HOST"
+  local:
+    user_regexp: ""
+  loopback:
+    ip:
+      - 127.0.0.0/8
+      - ::1/128
+
+access_rules:
+  local:
+    allow: local
+  c2s:
+    deny: blocked
+    allow: all
+  announce:
+    allow: admin
+  configure:
+    allow: admin
+  muc_admin:
+    allow: admin
+  muc_create:
+    allow: local
+  pubsub_createnode:
+    allow: local
+  trusted_network:
+    allow: loopback
+  register:
+    allow: all
+
+api_permissions:
+  "console commands":
+    from: ejabberd_ctl
+    who: all
+    what: "*"
+  "webadmin commands":
+    from: ejabberd_web_admin
+    who: admin
+    what: "*"
 
 modules:
+  mod_avatar: {}
+  mod_blocking: {}
+  mod_bosh: {}
+  mod_caps: {}
+  mod_carboncopy: {}
+  mod_client_state: {}
   mod_disco: {}
-  mod_roster: {}
-  mod_ping: {}
+  mod_fail2ban: {}
+  mod_http_upload:
+    put_url: "https://@HOST@/upload"
+    docroot: "/opt/ejabberd/upload"
+    max_size: 104857600
+    custom_headers:
+      "Access-Control-Allow-Origin": "*"
+      "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS"
+  mod_last: {}
   mod_mam:
     assume_mam_usage: true
     default: always
-
+  mod_muc:
+    host: "conference.@HOST@"
+    access:
+      - allow
+    access_admin:
+      - allow: admin
+    access_create: muc_create
+    access_persistent: muc_create
+    access_mam:
+      - allow
+    default_room_options:
+      mam: true
+      persistent: true
+      public: false
+      public_list: false
+      members_only: true
+      members_by_default: false
+      anonymous: false
+      allow_user_invites: true
+      allow_change_subj: false
+      allowpm: anyone
+  mod_muc_admin: {}
+  mod_offline: {}
+  mod_ping: {}
+  mod_privacy: {}
+  mod_private: {}
+  mod_pubsub:
+    access_createnode: pubsub_createnode
+    plugins:
+      - flat
+      - pep
+    force_node_config:
+      storage:bookmarks:
+        access_model: whitelist
+  mod_push: {}
+  mod_push_keepalive: {}
+  mod_register:
+    access: register
+    registration_watchers:
+      - "admin@HOST"
+  mod_roster:
+    versioning: true
+  mod_shared_roster: {}
+  mod_stream_mgmt:
+    resend_on_timeout: if_offline
+  mod_vcard: {}
+  mod_vcard_xupdate: {}
+  mod_version: {}
   mod_stun_disco:
     credentials_lifetime: 12h
-    secret: "$(TURN_SECRET)"
+    secret: TURN_SECRET
     services:
-      - host: "$(DOMAIN)"
+      - host: HOST
         port: 3478
         type: stun
         transport: udp
         restricted: false
-      - host: "$(DOMAIN)"
+      - host: HOST
         port: 3478
         type: stun
         transport: tcp
         restricted: false
-      - host: "$(DOMAIN)"
+      - host: HOST
         port: 3478
         type: turn
         transport: udp
         restricted: true
-      - host: "$(DOMAIN)"
+      - host: HOST
         port: 3478
         type: turn
         transport: tcp

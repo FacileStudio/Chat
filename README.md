@@ -1,102 +1,90 @@
-# XMPP (Ejabberd) + Coturn Stack for Dokploy
+# XMPP and Coturn stack for Dokploy
 
-Production-ready, privacy-focused instant messaging and A/V calling server stack deployed via Dokploy.
+Instant messaging and audio/video calling server stack deployed via Dokploy.
 
-This setup runs ejabberd (with XEP-0215 STUN/TURN Discovery for Jingle WebRTC calls) and Coturn (media relay) with zero hardcoded secrets or IP addresses in the codebase.
+The stack runs ejabberd and Coturn with zero hardcoded credentials or IP addresses. It aligns with modern XMPP compliance standards: in-band registration with anti-abuse throttling, 1:1 chat with OMEMO encryption, private members-only rooms (MUC), HTTP file sharing, mobile push notifications, and WebRTC STUN/TURN media relay.
 
-## 📁 Repository Structure
+## Repository structure
 
-```
+```text
 .
-├── .env.example        # Reference environment variables
-├── docker-compose.yml  # Container definitions and Traefik labels
-├── ejabberd.yml        # Generic ejabberd config with env var substitution
-└── README.md           # Documentation & operations guide
+├── .env.example
+├── docker-compose.yml
+├── ejabberd.yml
+└── README.md
 ```
 
+## Prerequisites
 
-## 🚀 Prerequisites
+A virtual private server with Dokploy installed.
 
-A VPS with Dokploy installed.
+A registered domain or subdomain pointing to the server IP.
 
-A registered domain or subdomain (e.g. `chat.example.com`) whose DNS A record points to your Dokploy server IP.
+Required open ports on the host:
 
-Open ports on your host/firewall:
+`80/tcp` and `443/tcp`: Handled by Dokploy and Traefik for web admin, WebSockets, HTTP upload, and ACME certificates.
 
-`80/tcp` & `443/tcp`: Handled by Dokploy / Traefik (Web admin, WebSockets, Let's Encrypt).
+`5222/tcp`: XMPP client-to-server traffic with STARTTLS.
 
-`5222/tcp`: XMPP Client-to-Server (c2s) STARTTLS.
+`5269/tcp` (Optional): Server-to-server federation.
 
-`5269/tcp` (Optional): Server-to-Server federation.
-
-`3478/tcp` & `3478/udp`: STUN/TURN discovery service.
+`3478/tcp` and `3478/udp`: STUN/TURN discovery service.
 
 `49152-49200/udp`: RTP media relay port range for audio/video calls.
 
-##⚙️ Configuration (.env)
+## Configuration
 
-Do not commit .env into git. Define these variables in Dokploy's Environment tab:
+Define these variables in the Dokploy environment tab:
 
 ```env
 DOMAIN=chat.example.com
 TURN_SECRET=generate_with_openssl_rand_hex_32
+ADMIN_PASSWORD=strong_admin_password_here
 ```
 
-
-Generate a secure turn secret via CLI:
+Generate a secure TURN secret:
 
 ```bash
 openssl rand -hex 32
 ```
 
+## Deployment via Dokploy
 
-## 📦 Deployment via Dokploy
+1. In Dokploy, create a new Compose service.
+2. Link this Git repository and select the target branch.
+3. Add `DOMAIN`, `TURN_SECRET`, and `ADMIN_PASSWORD` in the environment tab.
+4. Deploy the service. Ejabberd automatically provisions the admin account `admin@<DOMAIN>` on initial boot.
 
-In your Dokploy dashboard, create a new Compose service.
+## User registration and privacy
 
-Link your Git repository and select the branch (e.g., `main`).
+### In-band registration
 
-Navigate to the Environment tab of the service and paste your `DOMAIN` and `TURN_SECRET`.
+Anyone can open an XMPP client (Conversations, Dino, Siskin, Gajim), choose "Create account", enter the server domain, and register immediately.
 
-Click Deploy. Dokploy will pull images, mount volumes, and generate the SSL certificates automatically via Traefik.
+To prevent bot swarms:
+- `registration_timeout` limits account creation to one per 5 minutes per IP address.
+- `mod_fail2ban` blocks IP addresses that trigger repeated authentication failures.
+- `registration_watchers` sends an instant message to `admin@<DOMAIN>` whenever a new account registers.
 
-## 👤 User Management
+### Private team rooms
 
-To create initial accounts or administrative users, run ejabberdctl inside the running container (via Dokploy Web Terminal or SSH):
+Rooms created under `conference.<DOMAIN>` use private, members-only defaults:
+- `members_only: true`: Non-members cannot enter or view message history. Ejabberd rejects unauthorized join attempts with error 407 (registration-required).
+- `public: false`: Rooms are unlisted in service discovery. Outsiders cannot discover room names.
+- `public_list: false`: Room member lists are hidden from non-members.
+- `mam: true`: Message history is archived for authorized room members.
+- `persistent: true`: Rooms remain active when occupants disconnect.
 
-Register an Admin User
+To add a team member to a room, room moderators invite them directly from their client or add their JID to the room member list.
 
-```
-docker exec -it ejabberd ejabberdctl register admin chat.example.com StrongPasswordHere123!
-```
+For maximum privacy, enable OMEMO encryption inside the room settings in your client. All room messages are then end-to-end encrypted with Signal Double Ratchet keys between authorized members.
 
+## Recommended clients
 
-Register Standard Users
+Android: Conversations or Cheogram
 
-```
-docker exec -it ejabberd ejabberdctl register alice chat.example.com AlicePassword123!
-docker exec -it ejabberd ejabberdctl register bob chat.example.com BobPassword123!
-```
+iOS: Siskin IM or Monal
 
+Desktop (Linux, macOS, Windows): Dino or Gajim
 
-## 🧪 Testing Audio/Video Calls
-
-Open an XMPP client that supports Jingle (XEP-0166 / XEP-0215):
-
-Android: Conversations
-
-iOS: Siskin IM
-
-Desktop (Linux/Windows): Gajim or Dino
-
-Log in using your JID: `alice@chat.example.com`
-
-Add `bob@chat.example.com` to your contact list.
-
-Start an audio/video call. The app queries ejabberd for STUN/TURN credentials automatically and negotiates media streaming through Coturn when necessary.
-
-## 🔒 Security Notes
-
-No Leaked Credentials: Coturn receives credentials at startup via CLI arguments, and ejabberd reads them from container environment variables ($(TURN_SECRET) and $(DOMAIN)).
-
-Restricted UDP Range: Coturn is limited to ports 49152-49200 to prevent opening unnecessarily broad firewall windows.
+Web: Converse.js or Movim
