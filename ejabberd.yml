@@ -1,0 +1,54 @@
+loglevel: info
+
+hosts:
+  - "$(DOMAIN)"
+
+listen:
+  - port: 5222
+    ip: "::"
+    module: ejabberd_c2s
+    starttls: true
+    starttls_required: false
+  - port: 5269
+    ip: "::"
+    module: ejabberd_s2s_in
+  - port: 5443
+    ip: "::"
+    module: ejabberd_http
+    request_handlers:
+      "/admin": ejabberd_web_admin
+      "/ws": ejabberd_http_ws
+      "/bosh": mod_bosh
+
+modules:
+  mod_disco: {}
+  mod_roster: {}
+  mod_ping: {}
+  mod_mam:
+    assume_mam_usage: true
+    default: always
+
+  mod_stun_disco:
+    credentials_lifetime: 12h
+    secret: "$(TURN_SECRET)"
+    services:
+      - host: "$(DOMAIN)"
+        port: 3478
+        type: stun
+        transport: udp
+        restricted: false
+      - host: "$(DOMAIN)"
+        port: 3478
+        type: stun
+        transport: tcp
+        restricted: false
+      - host: "$(DOMAIN)"
+        port: 3478
+        type: turn
+        transport: udp
+        restricted: true
+      - host: "$(DOMAIN)"
+        port: 3478
+        type: turn
+        transport: tcp
+        restricted: true
