@@ -19,10 +19,7 @@ var (
 			Padding(0, 1)
 
 	headerStyle = lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderBottom(true).
-			BorderForeground(colorBorder).
-			Padding(0, 1)
+			Foreground(lipgloss.Color("#D4D4D8"))
 
 	sidebarStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).

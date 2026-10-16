@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"gopkg.in/yaml.v3"
 )
@@ -26,26 +27,28 @@ func Default() *Config {
 	}
 }
 
-// Dir returns the directory where the configuration is stored.
-func Dir() (string, error) {
+// Path returns the canonical path to the configuration file.
+func Path() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("read user home: %w", err)
 	}
+	candidates := []string{
+		filepath.Join(home, ".chat.yml"),
+		filepath.Join(home, ".chat.yaml"),
+		filepath.Join(home, ".config", "chat", "config.yml"),
+		filepath.Join(home, ".config", "chat", "config.yaml"),
+	}
+	for _, p := range candidates {
+		if _, err := os.Stat(p); err == nil {
+			return p, nil
+		}
+	}
 	xdg := os.Getenv("XDG_CONFIG_HOME")
 	if xdg != "" {
-		return filepath.Join(xdg, "chat"), nil
+		return filepath.Join(xdg, "chat", "config.yml"), nil
 	}
-	return filepath.Join(home, ".config", "chat"), nil
-}
-
-// Path returns the path to the configuration file.
-func Path() (string, error) {
-	dir, err := Dir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "config.yml"), nil
+	return filepath.Join(home, ".config", "chat", "config.yml"), nil
 }
 
 // LoadFile reads configuration from the specified file path.
@@ -64,7 +67,7 @@ func LoadFile(path string) (*Config, error) {
 	return cfg, nil
 }
 
-// Load reads configuration from the default path or environment.
+// Load reads configuration from available config paths and environment variables.
 func Load() (*Config, error) {
 	path, err := Path()
 	if err != nil {
@@ -74,16 +77,29 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	if envJID := os.Getenv("CHAT_JID"); envJID != "" {
-		cfg.JID = envJID
-	}
-	if envPass := os.Getenv("CHAT_PASSWORD"); envPass != "" {
-		cfg.Password = envPass
-	}
-	if envServer := os.Getenv("CHAT_SERVER"); envServer != "" {
-		cfg.Server = envServer
-	}
+	applyEnvOverrides(cfg)
 	return cfg, nil
+}
+
+func applyEnvOverrides(cfg *Config) {
+	if u := os.Getenv("CHAT_USER"); u != "" {
+		cfg.JID = u
+	} else if j := os.Getenv("CHAT_JID"); j != "" {
+		cfg.JID = j
+	}
+	if p := os.Getenv("CHAT_PASSWORD"); p != "" {
+		cfg.Password = p
+	} else if p := os.Getenv("CHAT_PASS"); p != "" {
+		cfg.Password = p
+	}
+	if s := os.Getenv("CHAT_SERVER"); s != "" {
+		cfg.Server = s
+	}
+	if p := os.Getenv("CHAT_PORT"); p != "" {
+		if port, err := strconv.Atoi(p); err == nil {
+			cfg.Port = port
+		}
+	}
 }
 
 // SaveFile writes configuration to the specified path.

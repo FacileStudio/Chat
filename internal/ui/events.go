@@ -26,7 +26,7 @@ func handleStatusEvent(m *Model, ev event.StatusEvent) {
 	m.status.state = ev.State
 	m.status.text = ev.Message
 	if ev.Err != nil {
-		m.err = ev.Err
+		m.status.err = ev.Err
 	}
 }
 
