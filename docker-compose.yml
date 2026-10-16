@@ -11,7 +11,7 @@ services:
       - TURN_SECRET=${TURN_SECRET}
       - EJABBERD_MACRO_HOST=${DOMAIN}
       - EJABBERD_MACRO_TURN_SECRET=${TURN_SECRET}
-      - REGISTER_ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - REGISTER_ADMIN_PASSWORD=${ADMIN_PASSWORD:-${REGISTER_ADMIN_PASSWORD:-}}
     volumes:
       - ejabberd_data:/opt/ejabberd/database
       - ejabberd_upload:/opt/ejabberd/upload
