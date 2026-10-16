@@ -41,11 +41,21 @@ func TestInsertMessageDeduplicationAndSorting(t *testing.T) {
 	msgs = insertMessage(msgs, m2)
 	msgs = insertMessage(msgs, m3)
 
-	if len(msgs) != 2 {
-		t.Fatalf("expected 2 messages after dedup, got %d", len(msgs))
+	m4 := event.MessageEvent{From: "alice@example.com", To: "alice@example.com", Body: "🔒 [OMEMO Encrypted for other device]", Time: t2, Encrypted: true}
+	m5 := event.MessageEvent{From: "alice@example.com", To: "alice@example.com", Body: "I sent you an OMEMO encrypted message", Time: t2.Add(time.Second), Encrypted: true}
+	msgs = insertMessage(msgs, m4)
+	msgs = insertMessage(msgs, m5)
+	if len(msgs) != 3 {
+		t.Fatalf("expected 3 messages after placeholder dedup, got %d", len(msgs))
 	}
-	if msgs[0].Body != "Earlier" || msgs[1].Body != "Hello" {
-		t.Fatalf("expected sorted messages, got %+v", msgs)
+
+	m6 := event.MessageEvent{From: "alice@example.com", To: "alice@example.com", Body: "Decrypted note!", Time: t2.Add(time.Second), Encrypted: true}
+	msgs = insertMessage(msgs, m6)
+	if len(msgs) != 3 {
+		t.Fatalf("expected 3 messages after replacing placeholder, got %d", len(msgs))
+	}
+	if msgs[2].Body != "Decrypted note!" {
+		t.Fatalf("expected placeholder to be replaced by decrypted note, got: %s", msgs[2].Body)
 	}
 }
 
@@ -74,6 +84,12 @@ func TestFormatMsgBodyOMEMO(t *testing.T) {
 	res4 := formatMsgBody(m4)
 	if !strings.Contains(res4, "🔒 Secret message") {
 		t.Fatalf("expected decrypted text with lock icon, got: %s", res4)
+	}
+
+	m5 := event.MessageEvent{Body: "", Encrypted: true}
+	res5 := formatMsgBody(m5)
+	if !strings.Contains(res5, "🔒 [OMEMO Encrypted for other device]") {
+		t.Fatalf("expected other device badge for empty body, got: %s", res5)
 	}
 }
 

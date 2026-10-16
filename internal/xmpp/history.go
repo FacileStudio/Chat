@@ -19,7 +19,7 @@ type mamForwardedMsg struct {
 	To        jid.JID                     `xml:"to,attr"`
 	From      jid.JID                     `xml:"from,attr"`
 	Body      string                      `xml:"body"`
-	Encrypted *struct{ XMLName xml.Name } `xml:"encrypted"`
+	Encrypted *rawEncrypted               `xml:"encrypted"`
 	EME       *struct{ XMLName xml.Name } `xml:"encryption"`
 }
 
@@ -47,21 +47,30 @@ func NewHistoryHandler(c *Client) mux.MessageHandlerFunc {
 		if res.Forward.Msg.Body == "" && !isEnc {
 			return nil
 		}
-		msgTime := res.Forward.Delay.Time
-		if msgTime.IsZero() {
-			msgTime = time.Now()
-		}
-		fromStr := res.Forward.Msg.From.Bare().String()
-		toStr := res.Forward.Msg.To.Bare().String()
-		c.events <- event.MessageEvent{
-			From:      fromStr,
-			To:        toStr,
-			Body:      res.Forward.Msg.Body,
-			Time:      msgTime,
-			Sent:      fromStr == c.addr.Bare().String(),
-			Encrypted: isEnc,
-		}
+		emitHistoryMessage(c, res, isEnc)
 		return nil
+	}
+}
+
+func emitHistoryMessage(c *Client, res mamResult, isEnc bool) {
+	msgTime := res.Forward.Delay.Time
+	if msgTime.IsZero() {
+		msgTime = time.Now()
+	}
+	fromStr := res.Forward.Msg.From.Bare().String()
+	rawMsg := rawMessage{
+		Message:   stanza.Message{To: res.Forward.Msg.To, From: res.Forward.Msg.From},
+		Body:      res.Forward.Msg.Body,
+		Encrypted: res.Forward.Msg.Encrypted,
+		EME:       res.Forward.Msg.EME,
+	}
+	c.events <- event.MessageEvent{
+		From:      fromStr,
+		To:        res.Forward.Msg.To.Bare().String(),
+		Body:      resolveMessageBody(c, rawMsg, isEnc),
+		Time:      msgTime,
+		Sent:      fromStr == c.addr.Bare().String(),
+		Encrypted: isEnc,
 	}
 }
 

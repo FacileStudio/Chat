@@ -2,6 +2,7 @@ package xmpp
 
 import (
 	"encoding/xml"
+	"strings"
 	"time"
 
 	"github.com/FacileStudio/Chat/internal/event"
@@ -91,9 +92,19 @@ func newMessageHandler(c *Client) mux.MessageHandlerFunc {
 }
 
 func resolveMessageBody(c *Client, msg rawMessage, isEnc bool) string {
-	if !isEnc || msg.Encrypted == nil {
+	if !isEnc {
 		return msg.Body
 	}
+	if msg.Encrypted != nil {
+		return resolveEncryptedBody(c, msg)
+	}
+	if strings.Contains(msg.Body, "omemo") || msg.Body == "" {
+		return "🔒 [OMEMO Encrypted for other device]"
+	}
+	return msg.Body
+}
+
+func resolveEncryptedBody(c *Client, msg rawMessage) string {
 	if c.omemo != nil && hasKeyForDevice(msg.Encrypted, c.omemo.DeviceID) {
 		decrypted, err := c.DecryptOMEMO(msg.From.Bare().String(), msg.Encrypted)
 		if err == nil && len(decrypted) > 0 {

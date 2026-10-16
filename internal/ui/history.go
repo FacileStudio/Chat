@@ -32,16 +32,11 @@ func fetchHistoryCmd(client *xmpp.Client, targetJID string) tea.Cmd {
 }
 
 func insertMessage(msgs []event.MessageEvent, msg event.MessageEvent) []event.MessageEvent {
-	for _, existing := range msgs {
-		if existing.Body == msg.Body && existing.Sent == msg.Sent && existing.From == msg.From && existing.To == msg.To {
-			diff := existing.Time.Sub(msg.Time)
-			if diff < 0 {
-				diff = -diff
-			}
-			if diff < 2*time.Second {
-				return msgs
-			}
-		}
+	if strings.TrimSpace(msg.Body) == "" && !msg.Encrypted {
+		return msgs
+	}
+	if shouldSkipOrUpdate(msgs, msg) {
+		return msgs
 	}
 	msgs = append(msgs, msg)
 	sort.SliceStable(msgs, func(i, j int) bool {
@@ -50,33 +45,42 @@ func insertMessage(msgs []event.MessageEvent, msg event.MessageEvent) []event.Me
 	return msgs
 }
 
-func formatMsgTime(t time.Time) string {
-	now := time.Now()
-	if t.Year() == now.Year() && t.YearDay() == now.YearDay() {
-		return t.Format("15:04")
+func shouldSkipOrUpdate(msgs []event.MessageEvent, msg event.MessageEvent) bool {
+	for i, existing := range msgs {
+		if isSameMessageWindow(existing, msg) {
+			return mergeDuplicate(msgs, i, msg)
+		}
 	}
-	return t.Format("02 Jan 15:04")
+	return false
 }
 
-func isOMEMOFallback(body string) bool {
-	if strings.Contains(body, "OMEMO encrypted message") {
+func isSameMessageWindow(a, b event.MessageEvent) bool {
+	if a.From != b.From || a.To != b.To {
+		return false
+	}
+	diff := a.Time.Sub(b.Time)
+	if diff < 0 {
+		diff = -diff
+	}
+	return diff < 5*time.Second
+}
+
+func mergeDuplicate(msgs []event.MessageEvent, idx int, msg event.MessageEvent) bool {
+	existing := msgs[idx]
+	if existing.Body == msg.Body {
 		return true
 	}
-	return strings.Contains(body, "conversations.im/omemo")
+	if isPlaceholder(existing.Body) && !isPlaceholder(msg.Body) {
+		msgs[idx] = msg
+		return true
+	}
+	return isPlaceholder(msg.Body)
 }
 
-func formatMsgBody(msg event.MessageEvent) string {
-	if strings.Contains(msg.Body, "[OMEMO Encrypted for other device]") {
-		return msgEncrypted.Render("🔒 [OMEMO Encrypted for other device]")
+func isPlaceholder(body string) bool {
+	clean := strings.TrimSpace(body)
+	if clean == "" || clean == "🔒" || clean == "🔒 [OMEMO Encrypted Message]" {
+		return true
 	}
-	if isOMEMOFallback(msg.Body) {
-		return msgEncrypted.Render("🔒 [OMEMO Encrypted for other device]")
-	}
-	if strings.HasPrefix(msg.Body, "🔒 [OMEMO") {
-		return msgEncrypted.Render(msg.Body)
-	}
-	if msg.Encrypted {
-		return msgEncrypted.Render("🔒 ") + msg.Body
-	}
-	return msg.Body
+	return strings.Contains(body, "[OMEMO Encrypted") || isOMEMOFallback(body)
 }
