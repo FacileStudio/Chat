@@ -4,6 +4,17 @@ All notable changes are documented here. Format derives from Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.1.6] - 2026-10-16
+
+### Added
+
+- OMEMO cryptographic identity engine using pure Go (`github.com/meszmate/xmpp-go/crypto/omemo`, X25519, Ed25519).
+- Persistent device ID generation stored in `~/.config/chat/device_id`.
+- Automatic announcement of device IDs to PEP (`urn:xmpp:omemo:2:devices` and `eu.siacs.conversations.axolotl.devicelist`).
+- Automatic publishing of X3DH public key bundles (`urn:xmpp:omemo:2:bundles`) to server PEP upon connection.
+- Key matching in incoming `<encrypted>` stanzas to differentiate messages encrypted specifically for this client versus other devices (`🔒 [OMEMO Encrypted for other device]`).
+- Commands `/omemo status` and `/omemo register` to view device fingerprint and re-publish bundles.
+
 ## [v0.1.5] - 2026-10-16
 
 ### Fixed
