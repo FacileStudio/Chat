@@ -72,20 +72,21 @@ access_rules:
 
 api_permissions:
   "console commands":
-    from: ejabberd_ctl
+    from:
+      - ejabberd_ctl
     who: all
     what: "*"
   "webadmin commands":
-    from: ejabberd_web_admin
-    who: admin
+    from:
+      - ejabberd_web_admin
+    who:
+      - acl: admin
     what: "*"
   "http access":
-    from: mod_http_api
+    from:
+      - mod_http_api
     who:
-      access:
-        allow:
-          - acl: loopback
-          - acl: admin
+      - acl: admin
     what:
       - "*"
 
