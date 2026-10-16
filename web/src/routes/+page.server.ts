@@ -77,16 +77,22 @@ export const actions: Actions = {
 				})
 			});
 
-			const body = await res.json().catch(() => null);
+			const raw = await res.text().catch(() => '');
+			let body: any = null;
+			try {
+				body = JSON.parse(raw);
+			} catch {
+				body = raw;
+			}
 
-			if (res.status === 200 && (body === 0 || body?.status === 'ok' || body === 'ok')) {
+			if (res.status === 200) {
 				return {
 					success: true,
 					jid: `${username}@${domain}`
 				};
 			}
 
-			if (body?.message?.includes('already registered') || body?.message?.includes('conflict') || body?.code === 409) {
+			if (res.status === 409 || body?.code === 10090 || (typeof body?.message === 'string' && body.message.includes('already registered'))) {
 				return fail(409, {
 					error: 'This username is already taken. Please choose another.',
 					username
@@ -94,7 +100,7 @@ export const actions: Actions = {
 			}
 
 			return fail(400, {
-				error: body?.message || 'Registration failed on the server',
+				error: body?.message || (typeof body === 'string' && body ? body : 'Registration failed on the server'),
 				username
 			});
 		} catch (err: any) {
