@@ -18,7 +18,7 @@ The stack runs ejabberd and Coturn with zero hardcoded credentials or IP address
 
 A virtual private server with Dokploy installed.
 
-A registered domain or subdomain pointing to the server IP.
+A registered domain or subdomain pointing to the server IP (must be DNS-only, unproxied / grey cloud in Cloudflare).
 
 Required open ports on the host:
 
