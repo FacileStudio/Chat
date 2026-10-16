@@ -1,5 +1,6 @@
 define_macro:
   HOST: localhost
+  ADMIN: admin@localhost
   TURN_SECRET: secret
 
 hosts:
@@ -34,7 +35,8 @@ listen:
 acl:
   admin:
     user:
-      - "admin@HOST"
+      - ADMIN
+      - "admin": HOST
   local:
     user_regexp: ""
   loopback:
@@ -132,7 +134,7 @@ modules:
   mod_register:
     access: register
     registration_watchers:
-      - "admin@HOST"
+      - ADMIN
   mod_roster:
     versioning: true
   mod_shared_roster: {}
