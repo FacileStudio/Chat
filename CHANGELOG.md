@@ -4,6 +4,19 @@ All notable changes are documented here. Format derives from Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.1.4] - 2026-10-16
+
+### Fixed
+
+- Safely detect OMEMO encrypted messages and Conversations fallback text instead of displaying raw error URLs.
+- Format OMEMO encrypted messages with a clean lock badge (`🔒 [OMEMO Encrypted Message]`).
+- Prevent empty OMEMO encrypted stanzas from being dropped during live chat and history queries.
+
+### Added
+
+- `/omemo` command displaying OMEMO encryption status and guidance.
+- `/omemo clear` command to reset stale OMEMO device lists on the server PEP node so other clients send plain text.
+
 ## [v0.1.3] - 2026-10-16
 
 ### Fixed
