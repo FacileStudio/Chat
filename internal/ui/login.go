@@ -8,6 +8,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+func handleLoginUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		return handleLoginKey(&m, msg)
+	case tea.WindowSizeMsg:
+		handleResize(&m, msg)
+	}
+	return m, nil
+}
+
 func handleLoginKey(m *Model, msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyCtrlC, tea.KeyEsc:

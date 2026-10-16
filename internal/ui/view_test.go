@@ -33,8 +33,8 @@ func TestViewMainChat(t *testing.T) {
 	model := updated.(Model)
 
 	output := model.View()
-	if !strings.Contains(output, "FACILE CHAT") {
-		t.Fatalf("expected main chat view, got: %s", output)
+	if !strings.Contains(output, "alice@example.com") {
+		t.Fatalf("expected username in header, got: %s", output)
 	}
 	if !strings.Contains(output, "Contacts") {
 		t.Fatalf("expected Contacts in sidebar, got: %s", output)

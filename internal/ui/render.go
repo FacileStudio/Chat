@@ -9,8 +9,11 @@ import (
 )
 
 func renderHeader(m Model) string {
-	title := titleStyle.Render("FACILE CHAT")
-	jidStr := headerStyle.Render(m.cfg.JID)
+	userTag := m.cfg.JID
+	if userTag == "" {
+		userTag = "chat"
+	}
+	userBox := titleStyle.Render(userTag)
 	statusDot := statusDotOffline.String() + " Offline"
 	switch m.status.state {
 	case event.StateConnected:
@@ -20,12 +23,12 @@ func renderHeader(m Model) string {
 	case event.StateError:
 		statusDot = statusDotOffline.String() + " Error"
 	}
-	gap := m.view.width - lipgloss.Width(title) - lipgloss.Width(jidStr) - lipgloss.Width(statusDot) - 2
+	gap := m.view.width - lipgloss.Width(userBox) - lipgloss.Width(statusDot) - 2
 	if gap < 1 {
 		gap = 1
 	}
 	spacer := strings.Repeat(" ", gap)
-	line := lipgloss.JoinHorizontal(lipgloss.Center, title, " ", jidStr, spacer, statusDot)
+	line := lipgloss.JoinHorizontal(lipgloss.Center, userBox, spacer, statusDot)
 	return lipgloss.NewStyle().Width(m.view.width).MaxHeight(1).Render(line)
 }
 
@@ -36,23 +39,30 @@ func renderSidebar(m Model, height int) string {
 		sb.WriteString(contactNormal.Render("No contacts\n/add <jid>"))
 	}
 	for i, item := range m.roster {
-		dot := renderStatusDot(item)
-		name := item.Name
-		if len(name) > 14 {
-			name = name[:13] + "…"
-		}
-		label := fmt.Sprintf("%s %s", dot, name)
+		label := formatContactLabel(item, m.cfg.JID)
 		if i == m.selectedIdx {
 			sb.WriteString(contactSelected.Render(label) + "\n")
 		} else {
 			sb.WriteString(contactNormal.Render(label) + "\n")
 		}
 	}
-	style := sidebarStyle.Width(20).Height(height)
+	style := sidebarStyle.Width(22).Height(height)
 	if m.view.activePane == PaneRoster {
-		style = sidebarActiveStyle.Width(20).Height(height)
+		style = sidebarActiveStyle.Width(22).Height(height)
 	}
 	return style.Render(sb.String())
+}
+
+func formatContactLabel(item event.RosterItem, selfJID string) string {
+	dot := renderStatusDot(item)
+	name := item.Name
+	if item.JID == selfJID || (name == "" && item.JID == selfJID) {
+		name = "You (Notes)"
+	}
+	if len(name) > 16 {
+		name = name[:15] + "…"
+	}
+	return fmt.Sprintf("%s %s", dot, name)
 }
 
 func renderStatusDot(item event.RosterItem) string {
@@ -67,7 +77,9 @@ func renderStatusDot(item event.RosterItem) string {
 
 func renderChat(m Model, width, height int) string {
 	contactHeader := "Conversation: " + m.activeJID
-	if m.activeJID == "" {
+	if m.activeJID == m.cfg.JID {
+		contactHeader = "Conversation: You (Notes)"
+	} else if m.activeJID == "" {
 		contactHeader = "No active conversation"
 	}
 	header := lipgloss.NewStyle().Bold(true).Foreground(colorActive).Render(contactHeader)
@@ -82,7 +94,7 @@ func renderChat(m Model, width, height int) string {
 }
 
 func renderFooter(m Model) string {
-	hints := "[Tab] Switch Pane • [Enter] Send • [/help] Commands • [Esc] Quit"
+	hints := "[Tab] Switch Pane • [Enter] Select/Send • [/help] Commands • [Esc] Quit"
 	status := m.status.text
 	if m.status.err != nil {
 		status = "Error: " + m.status.err.Error()

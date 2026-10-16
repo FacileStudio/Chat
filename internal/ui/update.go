@@ -8,15 +8,20 @@ import (
 
 // Update processes incoming Bubble Tea events and key strokes.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.login.active {
+		return handleLoginUpdate(m, msg)
+	}
+	return handleActiveUpdate(m, msg)
+}
+
+func handleActiveUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.login.active {
-			return handleLoginKey(&m, msg)
-		}
-		cmd := handleKeyPress(&m, msg)
-		if cmd != nil {
+		if cmd := handleKeyPress(&m, msg); cmd != nil {
 			return m, cmd
 		}
+	case tea.MouseMsg:
+		handleMouseClick(&m, msg)
 	case tea.WindowSizeMsg:
 		handleResize(&m, msg)
 	case xmppEventMsg:
@@ -27,7 +32,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.status.text = msg.err.Error()
 		}
 	}
-	if m.view.activePane == PaneChat && !m.login.active {
+	if m.view.activePane == PaneChat {
 		var inputCmd tea.Cmd
 		m.input, inputCmd = m.input.Update(msg)
 		return m, inputCmd
@@ -37,23 +42,42 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func handleKeyPress(m *Model, msg tea.KeyMsg) tea.Cmd {
 	switch msg.Type {
-	case tea.KeyCtrlC, tea.KeyEsc:
+	case tea.KeyCtrlC:
+		return tea.Quit
+	case tea.KeyEsc:
+		if m.view.activePane == PaneChat && len(m.roster) > 0 {
+			m.view.activePane = PaneRoster
+			m.input.Blur()
+			return nil
+		}
 		return tea.Quit
 	case tea.KeyTab:
+		togglePane(m)
+		return nil
+	case tea.KeyEnter:
 		if m.view.activePane == PaneRoster {
 			m.view.activePane = PaneChat
 			m.input.Focus()
-		} else {
-			m.view.activePane = PaneRoster
-			m.input.Blur()
+			return nil
 		}
-		return nil
-	case tea.KeyEnter:
 		return handleEnter(m)
 	case tea.KeyUp, tea.KeyDown:
 		handleNavigation(m, msg.String())
 	}
+	if m.view.activePane == PaneRoster && (msg.String() == "j" || msg.String() == "k") {
+		handleNavigation(m, msg.String())
+	}
 	return nil
+}
+
+func togglePane(m *Model) {
+	if m.view.activePane == PaneRoster {
+		m.view.activePane = PaneChat
+		m.input.Focus()
+	} else {
+		m.view.activePane = PaneRoster
+		m.input.Blur()
+	}
 }
 
 func handleEnter(m *Model) tea.Cmd {
@@ -78,28 +102,30 @@ func handleEnter(m *Model) tea.Cmd {
 	return nil
 }
 
+func handleMouseClick(m *Model, msg tea.MouseMsg) {
+	if msg.Action != tea.MouseActionPress || msg.Button != tea.MouseButtonLeft {
+		return
+	}
+	if msg.X <= 26 {
+		row := msg.Y - 2
+		if row >= 0 && row < len(m.roster) {
+			m.selectedIdx = row
+			m.activeJID = m.roster[row].JID
+			m.view.activePane = PaneChat
+			m.input.Focus()
+			refreshChatContent(m)
+		}
+		return
+	}
+	m.view.activePane = PaneChat
+	m.input.Focus()
+}
+
 func handleNavigation(m *Model, key string) {
 	if m.view.activePane == PaneRoster {
 		handleRosterNav(m, key)
 		return
 	}
-	handleChatNav(m, key)
-}
-
-func handleRosterNav(m *Model, key string) {
-	if key == "up" && m.selectedIdx > 0 {
-		m.selectedIdx--
-	}
-	if key == "down" && m.selectedIdx < len(m.roster)-1 {
-		m.selectedIdx++
-	}
-	if len(m.roster) > 0 && m.selectedIdx < len(m.roster) {
-		m.activeJID = m.roster[m.selectedIdx].JID
-		refreshChatContent(m)
-	}
-}
-
-func handleChatNav(m *Model, key string) {
 	if key == "up" {
 		m.viewport.ScrollUp(1)
 	} else if key == "down" {
@@ -107,22 +133,15 @@ func handleChatNav(m *Model, key string) {
 	}
 }
 
-func handleResize(m *Model, msg tea.WindowSizeMsg) {
-	m.view.width = msg.Width
-	m.view.height = msg.Height
-	sidebarW := 24
-	chatW := msg.Width - sidebarW
-	innerChatW := chatW - 4
-	if innerChatW < 10 {
-		innerChatW = 10
+func handleRosterNav(m *Model, key string) {
+	if (key == "up" || key == "k") && m.selectedIdx > 0 {
+		m.selectedIdx--
 	}
-	innerChatH := msg.Height - 6
-	if innerChatH < 3 {
-		innerChatH = 3
+	if (key == "down" || key == "j") && m.selectedIdx < len(m.roster)-1 {
+		m.selectedIdx++
 	}
-	m.viewport.Width = innerChatW
-	m.viewport.Height = innerChatH
-	m.input.Width = innerChatW - 2
-	m.login.pass.Width = 36
-	refreshChatContent(m)
+	if len(m.roster) > 0 && m.selectedIdx < len(m.roster) {
+		m.activeJID = m.roster[m.selectedIdx].JID
+		refreshChatContent(m)
+	}
 }

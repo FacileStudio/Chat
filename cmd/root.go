@@ -101,7 +101,7 @@ func runApp(cfg *config.Config) error {
 		defer client.Close()
 	}
 	model := ui.New(cfg, client, events)
-	p := tea.NewProgram(model, tea.WithAltScreen())
+	p := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion())
 	_, err := p.Run()
 	return err
 }

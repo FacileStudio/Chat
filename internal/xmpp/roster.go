@@ -15,6 +15,7 @@ import (
 
 // FetchRoster retrieves the user's contact roster from the server.
 func FetchRoster(ctx context.Context, s *xmpp.Session, c *Client) error {
+	ensureSelfContact(c)
 	iter := roster.Fetch(ctx, s)
 	defer iter.Close()
 	for iter.Next() {
@@ -24,13 +25,28 @@ func FetchRoster(ctx context.Context, s *xmpp.Session, c *Client) error {
 	return iter.Err()
 }
 
+func ensureSelfContact(c *Client) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	bare := c.addr.Bare().String()
+	if bare == "" {
+		return
+	}
+	findOrCreateRosterItem(c, bare, "You (Notes)", "both")
+	items := make([]event.RosterItem, len(c.roster))
+	copy(items, c.roster)
+	c.events <- event.RosterEvent{Items: items}
+}
+
 // ApplyRosterItem updates or adds a contact item in the client roster.
 func ApplyRosterItem(c *Client, item roster.Item) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	bare := item.JID.Bare().String()
 	name := item.Name
-	if name == "" {
+	if bare == c.addr.Bare().String() {
+		name = "You (Notes)"
+	} else if name == "" {
 		name = item.JID.Localpart()
 	}
 	if name == "" {
@@ -43,6 +59,10 @@ func ApplyRosterItem(c *Client, item roster.Item) {
 }
 
 func findOrCreateRosterItem(c *Client, bare, name, sub string) {
+	isSelf := bare == c.addr.Bare().String()
+	if isSelf && (name == "" || name == bare || name == c.addr.Localpart()) {
+		name = "You (Notes)"
+	}
 	for i := range c.roster {
 		if c.roster[i].JID == bare {
 			c.roster[i].Name = name
@@ -54,7 +74,7 @@ func findOrCreateRosterItem(c *Client, bare, name, sub string) {
 		JID:          bare,
 		Name:         name,
 		Subscription: sub,
-		Online:       false,
+		Online:       isSelf,
 	})
 }
 
