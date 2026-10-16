@@ -4,6 +4,14 @@ All notable changes are documented here. Format derives from Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.1.7] - 2026-10-16
+
+### Fixed
+
+- Render actual message content with a clean `🔒 ` icon when encrypted messages are decrypted, rather than hiding the text behind a placeholder badge.
+- Automatically announce both modern and legacy (`eu.siacs.conversations.axolotl`) key bundles upon connecting, enabling Conversations and other clients to discover and encrypt for this client without manual setup.
+- Automatic in-line OMEMO decryption for incoming stanzas without requiring commands.
+
 ## [v0.1.6] - 2026-10-16
 
 ### Added
